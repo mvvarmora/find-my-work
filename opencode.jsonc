@@ -15,15 +15,15 @@
     "servers": {
       "memory": {
         "type": "local",
-        "command": ["/e/MV/Documents/program files/node.js/npx", "-y", "@modelcontextprotocol/server-memory"]
+        "command": ["npx", "-y", "@modelcontextprotocol/server-memory"]
       },
       "android-adb": {
         "type": "local",
-        "command": ["/e/MV/Documents/program files/node.js/npx", "-y", "android-mcp-server"]
+        "command": ["npx", "-y", "android-mcp-server"]
       },
       "adb-classic": {
         "type": "local",
-        "command": ["/e/MV/Documents/program files/node.js/npx", "-y", "adb-mcp"]
+        "command": ["npx", "-y", "adb-mcp"]
       }
     }
   },
