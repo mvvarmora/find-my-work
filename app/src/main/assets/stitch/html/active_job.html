@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Active Job - Find My Work</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#001550",
+                    "primary": "#b6c4ff",
+                    "tertiary": "#ffb950",
+                    "inverse-on-surface": "#303030",
+                    "surface-container-low": "#1b1b1c",
+                    "on-surface": "#e5e2e1",
+                    "on-primary": "#002780",
+                    "outline-variant": "#434656",
+                    "secondary-container": "#02c953",
+                    "surface-bright": "#393939",
+                    "on-primary-fixed-variant": "#003ab3",
+                    "tertiary-fixed": "#ffddb3",
+                    "inverse-surface": "#e5e2e1",
+                    "inverse-primary": "#004ee8",
+                    "surface-variant": "#353535",
+                    "on-tertiary-container": "#fff4eb",
+                    "on-error-container": "#ffdad6",
+                    "surface-container-high": "#2a2a2a",
+                    "error-container": "#93000a",
+                    "on-secondary-fixed-variant": "#00531e",
+                    "tertiary-container": "#9a6600",
+                    "surface-container": "#202020",
+                    "outline": "#8d90a2",
+                    "on-secondary": "#003912",
+                    "tertiary-fixed-dim": "#ffb950",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-tertiary": "#452b00",
+                    "primary-fixed": "#dce1ff",
+                    "primary-fixed-dim": "#b6c4ff",
+                    "primary-container": "#2962ff",
+                    "surface-tint": "#b6c4ff",
+                    "on-secondary-container": "#004d1b",
+                    "surface": "#131313",
+                    "on-tertiary-fixed": "#291800",
+                    "error": "#ffb4ab",
+                    "surface-container-highest": "#353535",
+                    "background": "#131313",
+                    "on-tertiary-fixed-variant": "#624000",
+                    "on-secondary-fixed": "#002108",
+                    "on-background": "#e5e2e1",
+                    "surface-dim": "#131313",
+                    "on-primary-container": "#f7f5ff",
+                    "on-error": "#690005",
+                    "on-surface-variant": "#c3c5d8",
+                    "secondary-fixed-dim": "#3ce36a",
+                    "secondary": "#40e56c",
+                    "secondary-fixed": "#69ff87"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "margin-tablet": "24px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "gutter": "16px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "label-md": ["Inter"],
+                    "title-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0.15px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.25px", "fontWeight": "400"}],
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.25px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0.5px", "fontWeight": "400"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-shadow {
+            box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.4);
+        }
+        .glass-panel {
+            background: rgba(18, 18, 18, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-pill {
+            position: relative;
+        }
+        .active-pill::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background-color: #2962ff;
+            border-radius: 50%;
+        }
+        .timeline-line {
+            background: repeating-linear-gradient(to bottom, #434656 0, #434656 4px, transparent 4px, transparent 8px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<!-- Top App Bar -->
+<header class="w-full top-0 sticky z-50 bg-surface border-b border-white/8 flex justify-between items-center px-margin-mobile h-16">
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface hover:bg-surface-variant/10 p-2 rounded-full transition-colors active:scale-95 duration-100">arrow_back</button>
+<h1 class="font-title-lg text-title-lg text-primary font-bold">Active Job</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="material-symbols-outlined text-on-surface hover:bg-surface-variant/10 p-2 rounded-full transition-colors active:scale-95 duration-100">notifications</button>
+</div>
+</header>
+<main class="flex-1 px-margin-mobile py-lg space-y-gutter pb-32">
+<!-- Live Status Bar -->
+<section class="glass-panel rounded-xl p-md">
+<div class="flex justify-between items-center relative">
+<!-- Track Line -->
+<div class="absolute top-4 left-0 w-full h-[2px] bg-outline-variant z-0"></div>
+<div class="absolute top-4 left-0 w-1/3 h-[2px] bg-primary-container z-0 transition-all duration-500"></div>
+<!-- Status Nodes -->
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container" style="font-variation-settings: 'FILL' 1;">directions_car</span>
+</div>
+<span class="font-label-md text-label-md text-primary">In Transit</span>
+</div>
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center border-2 border-primary-container animate-pulse">
+<span class="material-symbols-outlined text-[18px] text-on-primary-container">location_on</span>
+</div>
+<span class="font-label-md text-label-md text-primary font-bold">Arrived</span>
+</div>
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">engineering</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Working</span>
+</div>
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-outline-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">check_circle</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">Completed</span>
+</div>
+</div>
+</section>
+<!-- Customer Card -->
+<section class="glass-panel rounded-xl p-md flex flex-col gap-md">
+<div class="flex justify-between items-start">
+<div class="flex gap-md">
+<div class="w-14 h-14 rounded-full bg-cover bg-center border border-white/10" data-alt="A professional portrait of a friendly woman in her late 30s with light brown hair and a welcoming smile, shot in a brightly lit modern apartment setting. The lighting is soft and natural, emphasizing a high-end, clean aesthetic with a focus on trust and reliability. Corporate modernism style, dark mode UI context, sharp focus." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCcTy1x7Uoz6fhgbd1ZABRcGfhjWSK4ZQ7AMKRISJxzM2pgi7pr94_7zNr8z5Pvha_LqhExFk411IX57wr2wAgc0Rkan1wD9NY_GgNHHGoemxxhUVijFRGrERROQ05bblin5X34MJJ8mZKYqXXOikdY1IyNEsVcLLrKRtgsLLbF4zJs5NLk-4qoNueVKVhr50Hh9h1DI2BtiLxhKm5TcKhlwkTLynLEhRQNsGCIXKrrv9ZoWMfEEAJw')">
+</div>
+<div>
+<h2 class="font-title-md text-title-md text-on-surface">Sarah Johnson</h2>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                            2.4 miles away • Downtown Loft
+                        </p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary border border-white/8 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">call</span>
+</button>
+<button class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary border border-white/8 active:scale-90 transition-transform">
+<span class="material-symbols-outlined">chat</span>
+</button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-sm">
+<button class="flex items-center justify-center gap-2 py-3 bg-primary-container text-on-primary-container rounded-lg font-label-lg text-label-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined">check_circle</span>
+                    I have arrived
+                </button>
+<button class="flex items-center justify-center gap-2 py-3 bg-surface-container-highest text-on-surface rounded-lg font-label-lg text-label-lg border border-white/8 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">navigation</span>
+                    Navigate
+                </button>
+</div>
+</section>
+<!-- Map Preview -->
+<section class="relative h-48 rounded-xl overflow-hidden border border-white/8">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A dark-themed stylized digital map of a city grid with a glowing blue navigation path leading to a destination pin. The aesthetic is futuristic and high-contrast, using neon blue for the route against deep charcoal and black backgrounds for the streets. Minimalist UI design with professional cartographic detail." data-location="San Francisco" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBHcw-y5Q0RoOxyc7L7gud79DG4uNMqpFMK4R4s53PQFY1TcECGTkBls4S5Ogj9bTfYJ0m1tv9sii5Do1uX28Kg9ocjrGq27Rjr-77L-7Y8LOwg3TgLMPZBXZjOHBWGL96GQo0j7EzdAlzK2ZWaCSxiAvyE4J84_y0IG0T8Fd7DrXN8tFhJX8Jws4KHa3zXRPdOE6FaHKol3RkeWXLqyZLfg3KZCcGOUTpuWMgWS3xKaICb1F_ds_kg')">
+</div>
+<div class="absolute top-4 right-4 glass-panel px-3 py-1 rounded-full flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+<span class="font-label-md text-label-md text-on-surface">Live Traffic</span>
+</div>
+</section>
+<!-- Vertical Timeline -->
+<section class="glass-panel rounded-xl p-md space-y-md">
+<h3 class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider">Job Progress</h3>
+<div class="relative pl-8 space-y-6">
+<!-- The Dashed Line -->
+<div class="absolute left-[7px] top-2 bottom-2 w-[2px] timeline-line"></div>
+<!-- Event 1 -->
+<div class="relative">
+<div class="absolute -left-8 top-1 w-4 h-4 rounded-full bg-secondary-container border-4 border-surface-container"></div>
+<div class="flex justify-between items-start">
+<div>
+<p class="font-title-md text-title-md text-on-surface">Job Accepted</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Preparing equipment and route</p>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">2:00 PM</span>
+</div>
+</div>
+<!-- Event 2 -->
+<div class="relative">
+<div class="absolute -left-8 top-1 w-4 h-4 rounded-full bg-secondary-container border-4 border-surface-container"></div>
+<div class="flex justify-between items-start">
+<div>
+<p class="font-title-md text-title-md text-on-surface">On the way</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Traveling to 452 Broadway</p>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">2:15 PM</span>
+</div>
+</div>
+<!-- Event 3 (Active) -->
+<div class="relative">
+<div class="absolute -left-8 top-1 w-4 h-4 rounded-full bg-primary-container border-4 border-surface-container animate-pulse"></div>
+<div class="flex justify-between items-start">
+<div>
+<p class="font-title-md text-title-md text-primary font-bold">Arrived at location</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Waiting for confirmation</p>
+</div>
+<span class="font-label-md text-label-md text-primary">Now</span>
+</div>
+</div>
+<!-- Event 4 (Future) -->
+<div class="relative opacity-40">
+<div class="absolute -left-8 top-1 w-4 h-4 rounded-full bg-outline-variant border-4 border-surface-container"></div>
+<div class="flex justify-between items-start">
+<div>
+<p class="font-title-md text-title-md text-on-surface">Work Started</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Ongoing task tracking</p>
+</div>
+<span class="font-label-md text-label-md text-on-surface-variant">--:--</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Actions Row -->
+<footer class="fixed bottom-0 w-full z-50 bg-surface-container-low border-t border-white/8 pb-safe px-margin-mobile h-[100px] flex items-center gap-gutter custom-shadow">
+<button class="flex-1 h-14 bg-error-container text-on-error-container rounded-xl flex items-center justify-center gap-2 font-label-lg text-label-lg border border-error/20 active:scale-95 transition-all">
+<span class="material-symbols-outlined">emergency</span>
+            Emergency
+        </button>
+<!-- Disabled state styling for Start Work -->
+<button class="flex-[1.5] h-14 bg-outline-variant/20 text-on-surface-variant rounded-xl flex items-center justify-center gap-2 font-label-lg text-label-lg cursor-not-allowed opacity-60" disabled="">
+<span class="material-symbols-outlined">play_arrow</span>
+            Start Work
+        </button>
+</footer>
+<!-- Bottom Nav (Hidden on active job screens to prioritize actions, but shown here to maintain app shell presence) -->
+<!-- In a real app, this might be replaced entirely by the Footer above, but following prompt constraints -->
+<nav class="hidden fixed bottom-0 w-full z-[60] h-[80px] bg-surface-container-low border-t border-white/8 md:flex justify-around items-center">
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-md text-label-md">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-5 py-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">work</span>
+<span class="font-label-md text-label-md">Jobs</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">history</span>
+<span class="font-label-md text-label-md">History</span>
+</div>
+<div class="flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Profile</span>
+</div>
+</nav>
+<script>
+        // Micro-interaction for buttons
+        document.querySelectorAll('button').forEach(button => {
+            if(!button.disabled) {
+                button.addEventListener('mousedown', () => {
+                    button.classList.add('scale-95');
+                });
+                button.addEventListener('mouseup', () => {
+                    button.classList.remove('scale-95');
+                });
+                button.addEventListener('mouseleave', () => {
+                    button.classList.remove('scale-95');
+                });
+            }
+        });
+
+        // Simple mock for "I have arrived" action
+        const arrivedBtn = document.querySelector('button:contains("I have arrived")');
+        // Standard querySelector doesn't support :contains, using manual check
+        document.querySelectorAll('button').forEach(btn => {
+            if(btn.innerText.includes('I have arrived')) {
+                btn.onclick = () => {
+                    btn.classList.replace('bg-primary-container', 'bg-secondary-container');
+                    btn.innerHTML = '<span class="material-symbols-outlined">check</span> Arrived';
+                    
+                    const startWorkBtn = document.querySelector('button:contains("Start Work")');
+                    // Enable the start work button
+                    const footerBtns = document.querySelectorAll('footer button');
+                    const startBtn = footerBtns[1];
+                    startBtn.disabled = false;
+                    startBtn.classList.remove('bg-outline-variant/20', 'text-on-surface-variant', 'cursor-not-allowed', 'opacity-60');
+                    startBtn.classList.add('bg-primary-container', 'text-on-primary-container', 'active:scale-95');
+                }
+            }
+        });
+    </script>
+</body></html>

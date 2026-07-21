@@ -1,0 +1,63 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "lsp": {
+    "kotlin-ls": {
+      "disabled": false,
+      "extensions": [".kt", ".kts"],
+      "env": {
+        "JAVA_HOME": "C:\\Program Files\\Java\\jdk-25"
+      }
+    }
+  },
+
+  "mcp": {
+    "servers": {
+      "memory": {
+        "type": "local",
+        "command": ["/e/MV/Documents/program files/node.js/npx", "-y", "@modelcontextprotocol/server-memory"]
+      },
+      "android-adb": {
+        "type": "local",
+        "command": ["/e/MV/Documents/program files/node.js/npx", "-y", "android-mcp-server"]
+      },
+      "adb-classic": {
+        "type": "local",
+        "command": ["/e/MV/Documents/program files/node.js/npx", "-y", "adb-mcp"]
+      }
+    }
+  },
+
+  "tools": {
+    "lsp": "allow",
+    "bash": "allow",
+    "read": "allow",
+    "write": "allow",
+    "edit": "allow",
+    "glob": "allow",
+    "grep": "allow"
+  },
+
+  "rules": [
+    "Project: Find My Work — Android worker app (Kotlin/Jetpack Compose)",
+    "Package: com.example.findmywork, Firebase project: find-my-worker-c57e0",
+    "Auth: Google Sign-In ONLY (Credential Manager API) — no email/password",
+    "Job lifecycle: PENDING → ACCEPTED → ON_THE_WAY → ARRIVED → STARTED → COMPLETED → RATED",
+    "Worker data: workers/{uid} in Firestore with fields: name, phone, services, experience, isOnline, etc.",
+    "Jobs data: jobs/{id} in Firestore with fields: workerId, status, createdAt, updatedAt, etc.",
+    "Run Gradle sync before building: gradlew build",
+    "Check Firestore composite indexes when adding new queries",
+    "Never modify google-services.json or build files",
+    "Use idiomatic Kotlin — no comments in code unless essential",
+    "Follow existing code conventions (ViewModel + StateFlow + Compose)",
+    "Prefer Material 3 components and the app's custom theme",
+    "JAVA_HOME must be set to C:\\Program Files\\Java\\jdk-25",
+    "Doc files: docs/PLAN.md, docs/ARCHITECTURE.md, docs/FIRESTORE_SCHEMA.md"
+  ],
+
+  "env": {
+    "OPENCODE_EXPERIMENTAL_LSP_TOOL": "true",
+    "JAVA_HOME": "C:\\Program Files\\Java\\jdk-25",
+    "ANYTHINGLLM_API_KEY": "09E3BKZ-KQYM05Z-PN77K4H-WQFYED7"
+  }
+}

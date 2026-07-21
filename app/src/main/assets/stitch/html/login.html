@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>Login - Find My Work</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed": "#001550",
+                    "primary": "#b6c4ff",
+                    "tertiary": "#ffb950",
+                    "inverse-on-surface": "#303030",
+                    "surface-container-low": "#1b1b1c",
+                    "on-surface": "#e5e2e1",
+                    "on-primary": "#002780",
+                    "outline-variant": "#434656",
+                    "secondary-container": "#02c953",
+                    "surface-bright": "#393939",
+                    "on-primary-fixed-variant": "#003ab3",
+                    "tertiary-fixed": "#ffddb3",
+                    "inverse-surface": "#e5e2e1",
+                    "inverse-primary": "#004ee8",
+                    "surface-variant": "#353535",
+                    "on-tertiary-container": "#fff4eb",
+                    "on-error-container": "#ffdad6",
+                    "surface-container-high": "#2a2a2a",
+                    "error-container": "#93000a",
+                    "on-secondary-fixed-variant": "#00531e",
+                    "tertiary-container": "#9a6600",
+                    "surface-container": "#202020",
+                    "outline": "#8d90a2",
+                    "on-secondary": "#003912",
+                    "tertiary-fixed-dim": "#ffb950",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-tertiary": "#452b00",
+                    "primary-fixed": "#dce1ff",
+                    "primary-fixed-dim": "#b6c4ff",
+                    "primary-container": "#2962ff",
+                    "surface-tint": "#b6c4ff",
+                    "on-secondary-container": "#004d1b",
+                    "surface": "#131313",
+                    "on-tertiary-fixed": "#291800",
+                    "error": "#ffb4ab",
+                    "surface-container-highest": "#353535",
+                    "background": "#131313",
+                    "on-tertiary-fixed-variant": "#624000",
+                    "on-secondary-fixed": "#002108",
+                    "on-background": "#e5e2e1",
+                    "surface-dim": "#131313",
+                    "on-primary-container": "#f7f5ff",
+                    "on-error": "#690005",
+                    "on-surface-variant": "#c3c5d8",
+                    "secondary-fixed-dim": "#3ce36a",
+                    "secondary": "#40e56c",
+                    "secondary-fixed": "#69ff87"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "margin-tablet": "24px",
+                    "lg": "24px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "gutter": "16px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "label-md": ["Inter"],
+                    "title-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "title-lg": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.5px", "fontWeight": "500"}],
+                    "title-md": ["16px", {"lineHeight": "24px", "letterSpacing": "0.15px", "fontWeight": "500"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.25px", "fontWeight": "400"}],
+                    "title-lg": ["22px", {"lineHeight": "28px", "fontWeight": "500"}],
+                    "display-lg": ["57px", {"lineHeight": "64px", "letterSpacing": "-0.25px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "0.5px", "fontWeight": "400"}],
+                    "label-lg": ["14px", {"lineHeight": "20px", "letterSpacing": "0.1px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #000000;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .login-card {
+            background: #121212;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(41, 98, 255, 0.4);
+        }
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(27, 27, 28, 0.8);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen">
+<main class="flex-grow flex flex-col px-margin-mobile pt-12 pb-8 max-w-md mx-auto w-full">
+<!-- Top Illustration Placeholder -->
+<div class="relative w-full aspect-square mb-8 overflow-hidden rounded-xl border border-white/8 bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover opacity-80" data-alt="A clean, minimalist 3D vector illustration of a professional worker carrying a toolbox, walking towards a glowing blue portal. The style is Corporate Modernism with smooth gradients in Primary Blue and Emerald Green against a deep black background. High-contrast lighting highlights the character's forward-moving posture, evoking a sense of efficiency and career progress in a futuristic workspace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZYlW2vvkQTwOrT4t9b652Nz4LSRlOd0V6Lg82MYmP82do_shO-jN6uayYvbPuFNrQ-Y9trDH3s1khlDZgLZxIWgA9qLeoCNcOdZOQpwvEb6UctAHHLdjiJyH2jBih_W1S4BhVOfop1j7ZBtRnBWeBa7SN62dbOwTbIp5QxnSD0OsqFAvyJu--lMed9YMxhwsuzPODNW0RIASJXz5EEMbcC9jb1uCK4gPXwnR5LGGOrFgDZO6z1ZcM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+</div>
+<!-- Header Section -->
+<div class="mb-8">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Welcome Back, Pro</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Login to manage your jobs</p>
+</div>
+<!-- Login Form -->
+<div class="space-y-md">
+<!-- Phone Input with Country Code -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-label-md text-primary ml-1">Phone Number</label>
+<div class="flex items-center login-card rounded-xl overflow-hidden h-[56px] focus-within:border-primary transition-colors">
+<div class="px-md flex items-center gap-xs border-r border-white/8 h-full bg-surface-container-low cursor-pointer active:bg-surface-variant/20 transition-colors">
+<span class="font-title-md text-title-md text-on-surface">+1</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]">expand_more</span>
+</div>
+<input class="bg-transparent border-none flex-grow h-full px-md text-on-surface font-title-md placeholder:text-on-surface-variant/50 focus:ring-0" placeholder="Enter mobile number" type="tel"/>
+</div>
+</div>
+<!-- Continue Button -->
+<button class="w-full h-[56px] bg-primary-container text-on-primary-container rounded-full font-title-md text-title-md flex items-center justify-center gap-sm active:scale-95 transition-transform shadow-lg">
+                Continue
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- Divider -->
+<div class="flex items-center my-xl">
+<div class="flex-grow h-[1px] bg-white/8"></div>
+<span class="px-md font-label-md text-label-md text-on-surface-variant">OR</span>
+<div class="flex-grow h-[1px] bg-white/8"></div>
+</div>
+<!-- Social Login -->
+<div class="space-y-md">
+<button class="w-full h-[56px] bg-transparent border border-outline-variant rounded-full font-title-md text-title-md text-on-surface flex items-center justify-center gap-md hover:bg-white/5 active:scale-95 transition-all">
+<svg fill="none" height="20" viewbox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"></path>
+</svg>
+                Continue with Google
+            </button>
+</div>
+<!-- Footer Link -->
+<div class="mt-auto pt-8 flex justify-center">
+<a class="font-label-lg text-label-lg text-primary hover:underline transition-all" href="#">Forgot Account?</a>
+</div>
+</main>
+<!-- Micro-interaction Script -->
+<script>
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                let ripple = document.createElement('div');
+                ripple.classList.add('ripple');
+                this.appendChild(ripple);
+                let x = e.clientX - e.target.offsetLeft;
+                let y = e.clientY - e.target.offsetTop;
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+
+        // Simple validation visualization
+        const phoneInput = document.querySelector('input[type="tel"]');
+        phoneInput.addEventListener('input', (e) => {
+            const val = e.target.value.replace(/\D/g, '');
+            if(val.length > 0) {
+                e.target.parentElement.classList.add('border-primary');
+                e.target.parentElement.classList.remove('border-white/8');
+            } else {
+                e.target.parentElement.classList.remove('border-primary');
+                e.target.parentElement.classList.add('border-white/8');
+            }
+        });
+    </script>
+<style>
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            border-radius: 50%;
+            animation: ripples 0.6s linear;
+        }
+        @keyframes ripples {
+            0% { width: 0px; height: 0px; opacity: 0.5; }
+            100% { width: 500px; height: 500px; opacity: 0; }
+        }
+    </style>
+</body></html>
