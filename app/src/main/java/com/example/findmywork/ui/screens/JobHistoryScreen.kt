@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.findmywork.data.model.Job
 import com.example.findmywork.data.repository.FirestoreRepository
+import com.example.findmywork.data.formatInr
 import com.example.findmywork.ui.components.StatusChip
 
 @Composable
@@ -93,7 +94,7 @@ private fun HistoryCard(job: Job) {
             ) {
                 Column {
                     Text(job.customerName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    Text(job.service, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(job.subServiceName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 StatusChip(status = job.status)
             }
@@ -105,7 +106,7 @@ private fun HistoryCard(job: Job) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "$${job.price.toInt()}",
+                    text = formatInr(job.totalAmount),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
@@ -120,7 +121,7 @@ private fun HistoryCard(job: Job) {
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "%.1f".format(job.rating),
+                            text = "%.1f".format(job.rating.toDouble()),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.tertiary
                         )

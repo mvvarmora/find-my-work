@@ -9,6 +9,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FieldValue
+import com.example.findmywork.data.COLLECTION_WORKERS
+import com.example.findmywork.data.WorkerStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -63,27 +66,40 @@ class FirebaseAuthRepository {
             val user = auth.currentUser
 
             if (isNewUser && user != null) {
+                val now = System.currentTimeMillis()
                 val workerData = hashMapOf(
+                    "id" to user.uid,
                     "name" to (user.displayName ?: ""),
                     "email" to (user.email ?: ""),
-                    "photo" to (user.photoUrl?.toString() ?: ""),
                     "phone" to (user.phoneNumber ?: ""),
-                    "profession" to "",
-                    "experience" to 0,
-                    "description" to "",
-                    "pricing" to 0.0,
+                    "photo" to (user.photoUrl?.toString() ?: ""),
+                    "age" to 0,
+                    "gender" to "",
+                    "categoryIds" to emptyList<String>(),
+                    "experienceYears" to 0,
+                    "description" to null,
+                    "pricing" to null,
                     "serviceRadius" to 10.0,
-                    "isOnline" to false,
-                    "rating" to 0.0,
+                    "workingRadiusKm" to 10,
+                    "isOnline" to true,
+                    "ratingSum" to 0.0,
+                    "ratingCount" to 0,
                     "totalJobs" to 0,
-                    "completionRate" to 0.0,
-                    "totalEarnings" to 0.0,
+                    "completionRate" to null,
+                    "totalEarnings" to null,
                     "documentsVerified" to false,
+                    "bankAccount" to "",
+                    "upiId" to "",
+                    "city" to "",
                     "skills" to emptyList<String>(),
-                    "createdAt" to System.currentTimeMillis(),
-                    "updatedAt" to System.currentTimeMillis()
+                    "status" to "PENDING",
+                    "worksBeforeAfter" to emptyList<String>(),
+                    "createdAt" to now,
+                    "updatedAt" to now,
+                    "active" to true,
+                    "rejectionReason" to null
                 )
-                firestore.collection("workers").document(user.uid)
+                firestore.collection(COLLECTION_WORKERS).document(user.uid)
                     .set(workerData)
                     .await()
             }

@@ -4,6 +4,7 @@ import androidx.compose.material.icons.rounded.AttachMoney
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Payment
 import androidx.compose.material.icons.rounded.Person
 
 import androidx.compose.foundation.background
@@ -40,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.findmywork.data.formatInr
 import com.example.findmywork.data.repository.FirestoreRepository
 import kotlinx.coroutines.launch
 
@@ -105,13 +107,31 @@ fun JobDetailsScreen(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        DetailRow(icon = Icons.Rounded.Build, label = "Service", value = j.service)
+                        DetailRow(icon = Icons.Rounded.Build, label = "Service", value = j.subServiceName)
                         Spacer(modifier = Modifier.height(16.dp))
-                        DetailRow(icon = Icons.Rounded.Description, label = "Description", value = j.description)
+                        DetailRow(icon = Icons.Rounded.Description, label = "Instructions", value = j.specialInstructions.ifBlank { "None" })
                         Spacer(modifier = Modifier.height(16.dp))
-                        DetailRow(icon = Icons.Rounded.LocationOn, label = "Address", value = j.address)
+                        val addressStr = listOfNotNull(
+                            j.flatNo.takeIf { it.isNotBlank() },
+                            j.societyName.takeIf { it.isNotBlank() },
+                            j.landmark.takeIf { it.isNotBlank() },
+                            j.city.takeIf { it.isNotBlank() }
+                        ).joinToString(", ")
+                        DetailRow(icon = Icons.Rounded.LocationOn, label = "Address", value = addressStr.ifBlank { "Not specified" })
                         Spacer(modifier = Modifier.height(16.dp))
-                        DetailRow(icon = Icons.Rounded.AttachMoney, label = "Price", value = "$${j.price.toInt()}")
+                        DetailRow(icon = Icons.Rounded.AttachMoney, label = "Price", value = formatInr(j.totalAmount))
+                        if (j.paymentMethod == "DIRECT_UPI" || j.paymentStatus == "PAID") {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            DetailRow(
+                                icon = Icons.Rounded.Payment,
+                                label = "Payment",
+                                value = when {
+                                    j.paymentStatus == "PAID" -> "Paid via Direct UPI"
+                                    j.paymentMethod == "DIRECT_UPI" -> "Direct UPI"
+                                    else -> "Direct UPI"
+                                }
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(24.dp))
                         Button(

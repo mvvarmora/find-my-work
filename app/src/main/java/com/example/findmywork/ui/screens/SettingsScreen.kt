@@ -22,6 +22,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -37,7 +38,12 @@ import androidx.compose.ui.unit.dp
 fun SettingsScreen(
     isDarkTheme: Boolean = true,
     onToggleTheme: () -> Unit = {},
-    onSignOut: () -> Unit = {}
+    onSignOut: () -> Unit = {},
+    onNavigateToPaymentMethods: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
+    onAboutClick: () -> Unit = {},
+    onBack: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -46,8 +52,14 @@ fun SettingsScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Settings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        // Header with back button
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Settings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -83,13 +95,13 @@ fun SettingsScreen(
                     )
                 }
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                SettingsItem(icon = Icons.Rounded.Person, title = "Edit Profile")
+                ClickableSettingsItem(icon = Icons.Rounded.Person, title = "Edit Profile", onClick = onNavigateToEditProfile)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                SettingsItem(icon = Icons.Rounded.Notifications, title = "Notifications")
+                ClickableSettingsItem(icon = Icons.Rounded.Notifications, title = "Notifications", onClick = onNavigateToNotifications)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                SettingsItem(icon = Icons.Rounded.Payment, title = "Payment Methods")
+                ClickableSettingsItem(icon = Icons.Rounded.Payment, title = "Payment Methods", onClick = onNavigateToPaymentMethods)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
-                SettingsItem(icon = Icons.Rounded.Info, title = "About")
+                ClickableSettingsItem(icon = Icons.Rounded.Info, title = "About", onClick = onAboutClick)
             }
         }
 
@@ -120,9 +132,9 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingsItem(icon: ImageVector, title: String) {
+private fun ClickableSettingsItem(icon: ImageVector, title: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable { }.padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))

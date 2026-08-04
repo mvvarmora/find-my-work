@@ -2,6 +2,7 @@ package com.example.findmywork
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import com.example.findmywork.data.repository.FirebaseAuthRepository
 import com.example.findmywork.data.repository.FirestoreRepository
 import com.example.findmywork.navigation.BottomNavBar
@@ -43,10 +45,13 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(currentUserId) {
                 if (currentUserId != null) {
                     val firestore = FirebaseFirestore.getInstance()
-                    val doc = firestore.collection("workers")
+                    val snap = firestore.collection("workers")
                         .document(currentUserId!!)
                         .get()
-                    hasCompletedProfile = doc.isSuccessful && doc.result.exists()
+                        .await()
+                    val name = snap.getString("name") ?: ""
+                    val cats = snap.get("categoryIds") as? List<String> ?: emptyList()
+                    hasCompletedProfile = name.isNotBlank() && cats.isNotEmpty()
                 } else {
                     hasCompletedProfile = false
                 }
@@ -74,6 +79,22 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
+                    // Handle system back button
+                    BackHandler(enabled = currentScreen != Screen.HomeDashboard.route &&
+                        currentScreen != Screen.Splash.route &&
+                        currentScreen != Screen.Login.route) {
+                        currentScreen = when (currentScreen) {
+                            Screen.Settings.route -> Screen.Profile.route
+                            Screen.PaymentMethods.route -> Screen.Settings.route
+                            Screen.Notifications.route -> Screen.HomeDashboard.route
+                            Screen.Earnings.route -> Screen.HomeDashboard.route
+                            Screen.JobDetails.route -> Screen.AvailableJobs.route
+                            Screen.ActiveJob.route -> Screen.HomeDashboard.route
+                            Screen.CompleteProfile.route -> Screen.HomeDashboard.route
+                            else -> Screen.HomeDashboard.route
+                        }
+                    }
+
                     NavGraph(
                         currentScreen = currentScreen,
                         onNavigate = { route -> currentScreen = route },

@@ -1,67 +1,116 @@
 package com.example.findmywork.data.model
 
-enum class JobStatus {
-    PENDING, ACCEPTED, ON_THE_WAY, ARRIVED, STARTED, COMPLETED, RATED, CANCELLED
-}
+data class Worker(
+    val id: String = "",
+    val name: String = "",
+    val email: String? = null,
+    val phone: String = "",
+    val photo: String = "",
+    val age: Int = 0,
+    val gender: String = "",
+    val categoryIds: List<String> = emptyList(),
+    val experienceYears: Int = 0,
+    val description: String? = null,
+    val pricing: Double? = null,
+    val serviceRadius: Double = 10.0,
+    val workingRadiusKm: Int = 10,
+    val isOnline: Boolean = true,
+    val ratingSum: Double = 0.0,
+    val ratingCount: Int = 0,
+    val totalJobs: Int = 0,
+    val completionRate: Float? = null,
+    val totalEarnings: Double? = null,
+    val documentsVerified: Boolean = false,
+    val bankAccount: String = "",
+    val upiId: String = "",
+    val preferredPayout: String = "",  // "UPI", "BANK", or ""
+    val city: String = "",
+    val skills: List<String> = emptyList(),
+    val status: String = "PENDING",
+    val worksBeforeAfter: List<String> = emptyList(),
+    val rejectionReason: String? = null,
+    val active: Boolean = true,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
 
 data class Job(
     val id: String = "",
     val customerId: String = "",
     val customerName: String = "",
+    val customerPhone: String = "",
     val customerPhoto: String = "",
-    val workerId: String = "",
-    val service: String = "",
-    val description: String = "",
-    val address: String = "",
-    val price: Double = 0.0,
-    val distance: Double = 0.0,
-    val status: JobStatus = JobStatus.PENDING,
+    val workerId: String? = null,
+    val workerName: String? = null,
+    val workerPhone: String? = null,
+    val workerRating: Double? = null,
+    val flatNo: String = "",
+    val societyName: String = "",
+    val landmark: String = "",
+    val pinCode: String = "",
+    val city: String = "",
+    val categoryId: String = "",
+    val categoryName: String = "",
+    val subServiceId: String = "",
+    val subServiceName: String = "",
+    val basePrice: Double = 0.0,
+    val platformFee: Double = 0.0,
+    val gstAmount: Double = 0.0,
+    val discountAmount: Double = 0.0,
+    val totalAmount: Double = 0.0,
+    val bookingDate: String = "",
+    val timeSlot: String = "",
+    val specialInstructions: String = "",
+    val photoPath: String = "",
+    val status: String = "PENDING",
+    val cancelledBy: String? = null,
+    val rating: Int = 0,
+    val review: String = "",
+    val workPhotoBefore: String = "",
+    val workPhotoAfter: String = "",
+    val timestamp: Long = System.currentTimeMillis(),
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
-    val rating: Float = 0f,
-    val review: String = ""
-)
-
-data class Worker(
-    val id: String = "",
-    val name: String = "",
-    val email: String = "",
-    val phone: String = "",
-    val photo: String = "",
-    val profession: String = "",
-    val experience: Int = 0,
-    val description: String = "",
-    val pricing: Double = 0.0,
-    val serviceRadius: Double = 10.0,
-    val isOnline: Boolean = false,
-    val rating: Float = 0f,
-    val totalJobs: Int = 0,
-    val completionRate: Float = 0f,
-    val totalEarnings: Double = 0.0,
-    val documentsVerified: Boolean = false,
-    val skills: List<String> = emptyList(),
-    val reviews: List<Review> = emptyList()
+    val arrivedAt: Long = 0L,
+    val startedAt: Long = 0L,
+    val completedAt: Long = 0L,
+    val acceptedAt: Long = 0L,
+    val cancelledAt: Long = 0L,
+    val disputeReason: String? = null,
+    val paymentStatus: String = "PENDING",
+    val paymentMethod: String = "",
+    val geohash: String = "",
+    val distance: Double = 0.0,
+    val active: Boolean = true
 )
 
 data class Review(
     val customerName: String = "",
     val rating: Float = 0f,
     val comment: String = "",
-    val date: Long = System.currentTimeMillis()
+    val date: Long = System.currentTimeMillis(),
+    val workerId: String = "",
+    val jobId: String = ""
 )
 
 data class Notification(
     val id: String = "",
+    val userId: String = "",
     val title: String = "",
     val message: String = "",
     val type: String = "",
+    val jobId: String = "",
+    val actionUrl: String = "",
     val read: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )
 
 data class Earning(
+    val workerId: String = "",
     val date: Long = System.currentTimeMillis(),
     val amount: Double = 0.0,
     val jobId: String = "",
-    val customerName: String = ""
+    val customerName: String = "",
+    val paymentMethod: String = "",
+    val transactionId: String = ""
 )

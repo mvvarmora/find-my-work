@@ -21,13 +21,25 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.findmywork.R
+import com.example.findmywork.navigation.Screen
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(onNavigate: (String) -> Unit) {
-    LaunchedEffect(Unit) {
+fun SplashScreen(
+    isLoggedIn: Boolean,
+    hasCompletedProfile: Boolean,
+    onNavigate: (String) -> Unit
+) {
+    // Use hasCompletedProfile and isLoggedIn as keys so the LaunchedEffect
+    // restarts when these values change, ensuring we always read fresh values
+    // instead of stale captured ones from initial composition.
+    LaunchedEffect(hasCompletedProfile, isLoggedIn) {
         delay(2000)
-        onNavigate(com.example.findmywork.navigation.Screen.Login.route)
+        when {
+            !isLoggedIn -> onNavigate(Screen.Login.route)
+            !hasCompletedProfile -> onNavigate(Screen.CompleteProfile.route)
+            else -> onNavigate(Screen.HomeDashboard.route)
+        }
     }
 
     Box(

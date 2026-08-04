@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.findmywork.data.formatInr
 import com.example.findmywork.data.model.Job
 
 
@@ -58,7 +59,7 @@ fun JobCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = job.service,
+                        text = job.subServiceName,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -66,7 +67,7 @@ fun JobCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = job.description,
+                text = job.specialInstructions,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -76,7 +77,7 @@ fun JobCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "$${job.price.toInt()}",
+                    text = formatInr(job.totalAmount),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Bold

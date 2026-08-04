@@ -3,6 +3,7 @@ package com.example.findmywork
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
+import com.example.findmywork.data.Fields
 import com.example.findmywork.data.repository.FirestoreRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,11 +19,19 @@ class OnlineStatusObserver(
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
+            Lifecycle.Event.ON_START -> {
+                val uid = getUserId()
+                if (uid != null) {
+                    scope.launch {
+                        firestoreRepository.updateWorkerField(uid, Fields.IS_ONLINE, true)
+                    }
+                }
+            }
             Lifecycle.Event.ON_STOP -> {
                 val uid = getUserId()
                 if (uid != null) {
                     scope.launch {
-                        firestoreRepository.updateWorkerField(uid, "isOnline", false)
+                        firestoreRepository.updateWorkerField(uid, Fields.IS_ONLINE, false)
                     }
                 }
             }

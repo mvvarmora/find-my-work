@@ -10,20 +10,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.findmywork.data.model.JobStatus
-
-
 @Composable
-fun StatusChip(status: JobStatus) {
+fun StatusChip(status: String) {
     val (color, label) = when (status) {
-        JobStatus.PENDING -> Pair(MaterialTheme.colorScheme.tertiary, "Pending")
-        JobStatus.ACCEPTED -> Pair(MaterialTheme.colorScheme.primary, "Accepted")
-        JobStatus.ON_THE_WAY -> Pair(MaterialTheme.colorScheme.primary, "On The Way")
-        JobStatus.ARRIVED -> Pair(MaterialTheme.colorScheme.secondary, "Arrived")
-        JobStatus.STARTED -> Pair(MaterialTheme.colorScheme.secondary, "In Progress")
-        JobStatus.COMPLETED -> Pair(MaterialTheme.colorScheme.secondary, "Completed")
-        JobStatus.RATED -> Pair(MaterialTheme.colorScheme.secondary, "Completed")
-        JobStatus.CANCELLED -> Pair(MaterialTheme.colorScheme.error, "Cancelled")
+        "PENDING" -> Pair(MaterialTheme.colorScheme.tertiary, "Pending")
+        "ACCEPTED" -> Pair(MaterialTheme.colorScheme.primary, "Accepted")
+        "ON_THE_WAY" -> Pair(MaterialTheme.colorScheme.primary, "On The Way")
+        "ARRIVED" -> Pair(MaterialTheme.colorScheme.secondary, "Arrived")
+        "STARTED" -> Pair(MaterialTheme.colorScheme.secondary, "In Progress")
+        "COMPLETED" -> Pair(MaterialTheme.colorScheme.secondary, "Completed")
+        "RATED" -> Pair(MaterialTheme.colorScheme.secondary, "Completed")
+        "CANCELLED" -> Pair(MaterialTheme.colorScheme.error, "Cancelled")
+        else -> Pair(MaterialTheme.colorScheme.onSurface, status)
     }
 
     Text(

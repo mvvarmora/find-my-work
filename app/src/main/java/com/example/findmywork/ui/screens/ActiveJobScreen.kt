@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.example.findmywork.ui.components.StatusChip
 import com.example.findmywork.ui.components.TimelineIndicator
 import com.example.findmywork.ui.components.TimelineStep
-import com.example.findmywork.data.model.JobStatus
+import com.example.findmywork.data.formatInr
 import com.example.findmywork.data.repository.FirestoreRepository
 import kotlinx.coroutines.launch
 
@@ -53,14 +53,16 @@ fun ActiveJobScreen(
     val job by firestoreRepository.getJobByIdFlow(jobId)
         .collectAsState(initial = null)
 
-    val currentStatus = job?.status ?: JobStatus.ACCEPTED
+    val statusOrder = listOf("ACCEPTED", "ON_THE_WAY", "ARRIVED", "STARTED", "COMPLETED", "RATED")
+    val currentStatus = job?.status ?: "ACCEPTED"
+    val currentIdx = statusOrder.indexOf(currentStatus).coerceAtLeast(0)
 
     val steps = listOf(
-        TimelineStep("Accepted", currentStatus >= JobStatus.ACCEPTED, active = currentStatus == JobStatus.ACCEPTED),
-        TimelineStep("On The Way", currentStatus >= JobStatus.ON_THE_WAY, active = currentStatus == JobStatus.ON_THE_WAY),
-        TimelineStep("Arrived", currentStatus >= JobStatus.ARRIVED, active = currentStatus == JobStatus.ARRIVED),
-        TimelineStep("Work Started", currentStatus >= JobStatus.STARTED, active = currentStatus == JobStatus.STARTED),
-        TimelineStep("Completed", currentStatus >= JobStatus.COMPLETED, active = currentStatus == JobStatus.COMPLETED)
+        TimelineStep("Accepted", currentIdx >= statusOrder.indexOf("ACCEPTED"), active = currentStatus == "ACCEPTED"),
+        TimelineStep("On The Way", currentIdx >= statusOrder.indexOf("ON_THE_WAY"), active = currentStatus == "ON_THE_WAY"),
+        TimelineStep("Arrived", currentIdx >= statusOrder.indexOf("ARRIVED"), active = currentStatus == "ARRIVED"),
+        TimelineStep("Work Started", currentIdx >= statusOrder.indexOf("STARTED"), active = currentStatus == "STARTED"),
+        TimelineStep("Completed", currentIdx >= statusOrder.indexOf("COMPLETED"), active = currentStatus == "COMPLETED")
     )
 
     Column(
@@ -116,14 +118,20 @@ fun ActiveJobScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(j.customerName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(j.service, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(j.subServiceName, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    if (j.address.isNotBlank()) {
-                        Text(j.address, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val addressStr = listOfNotNull(
+                        j.flatNo.takeIf { it.isNotBlank() },
+                        j.societyName.takeIf { it.isNotBlank() },
+                        j.landmark.takeIf { it.isNotBlank() },
+                        j.city.takeIf { it.isNotBlank() }
+                    ).joinToString(", ")
+                    if (addressStr.isNotBlank()) {
+                        Text(addressStr, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Text("\$${j.price.toInt()}", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
+                    Text(formatInr(j.totalAmount), style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 8.dp))
                 }
             }
 
@@ -141,10 +149,10 @@ fun ActiveJobScreen(
             Text("Actions", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 12.dp))
 
             val nextAction = when (currentStatus) {
-                JobStatus.ACCEPTED -> "On The Way"
-                JobStatus.ON_THE_WAY -> "Arrived"
-                JobStatus.ARRIVED -> "Start Work"
-                JobStatus.STARTED -> "Complete Job"
+                "ACCEPTED" -> "On The Way"
+                "ON_THE_WAY" -> "Arrived"
+                "ARRIVED" -> "Start Work"
+                "STARTED" -> "Complete Job"
                 else -> null
             }
 
@@ -153,10 +161,10 @@ fun ActiveJobScreen(
                     onClick = {
                         scope.launch {
                             val next = when (currentStatus) {
-                                JobStatus.ACCEPTED -> JobStatus.ON_THE_WAY
-                                JobStatus.ON_THE_WAY -> JobStatus.ARRIVED
-                                JobStatus.ARRIVED -> JobStatus.STARTED
-                                JobStatus.STARTED -> JobStatus.COMPLETED
+                                "ACCEPTED" -> "ON_THE_WAY"
+                                "ON_THE_WAY" -> "ARRIVED"
+                                "ARRIVED" -> "STARTED"
+                                "STARTED" -> "COMPLETED"
                                 else -> currentStatus
                             }
                             firestoreRepository.updateJobStatus(jobId, next)
@@ -170,7 +178,7 @@ fun ActiveJobScreen(
                 }
             }
 
-            if (currentStatus == JobStatus.COMPLETED || currentStatus == JobStatus.RATED) {
+            if (currentStatus == "COMPLETED" || currentStatus == "RATED") {
                 Spacer(modifier = Modifier.height(16.dp))
                 Card(
                     modifier = Modifier.fillMaxWidth(),

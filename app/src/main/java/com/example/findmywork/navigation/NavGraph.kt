@@ -18,6 +18,7 @@ import com.example.findmywork.ui.screens.JobDetailsScreen
 import com.example.findmywork.ui.screens.JobHistoryScreen
 import com.example.findmywork.ui.screens.LoginScreen
 import com.example.findmywork.ui.screens.NotificationsScreen
+import com.example.findmywork.ui.screens.PaymentMethodsScreen
 import com.example.findmywork.ui.screens.ProfileScreen
 import com.example.findmywork.ui.screens.SettingsScreen
 import com.example.findmywork.ui.screens.SplashScreen
@@ -35,6 +36,7 @@ sealed class Screen(val route: String) {
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
     data object Notifications : Screen("notifications")
+    data object PaymentMethods : Screen("payment_methods")
 }
 
 @Composable
@@ -58,13 +60,9 @@ fun NavGraph(
     Box(modifier = modifier) {
         when (currentScreen) {
             Screen.Splash.route -> SplashScreen(
-                onNavigate = {
-                    when {
-                        !isLoggedIn -> onNavigate(Screen.Login.route)
-                        !hasCompletedProfile -> onNavigate(Screen.CompleteProfile.route)
-                        else -> onNavigate(Screen.HomeDashboard.route)
-                    }
-                }
+                isLoggedIn = isLoggedIn,
+                hasCompletedProfile = hasCompletedProfile,
+                onNavigate = onNavigate
             )
             Screen.Login.route -> LoginScreen(
                 authRepository = authRepository,
@@ -124,7 +122,8 @@ fun NavGraph(
             )
             Screen.Earnings.route -> EarningsScreen(
                 workerId = workerId,
-                firestoreRepository = firestoreRepository
+                firestoreRepository = firestoreRepository,
+                onBack = { onNavigate(Screen.HomeDashboard.route) }
             )
             Screen.Profile.route -> ProfileScreen(
                 workerId = workerId,
@@ -134,11 +133,20 @@ fun NavGraph(
             Screen.Settings.route -> SettingsScreen(
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme,
-                onSignOut = onSignOut
+                onSignOut = onSignOut,
+                onNavigateToPaymentMethods = { onNavigate(Screen.PaymentMethods.route) },
+                onNavigateToNotifications = { onNavigate(Screen.Notifications.route) },
+                onBack = { onNavigate(Screen.Profile.route) }
             )
             Screen.Notifications.route -> NotificationsScreen(
                 workerId = workerId,
-                firestoreRepository = firestoreRepository
+                firestoreRepository = firestoreRepository,
+                onBack = { onNavigate(Screen.HomeDashboard.route) }
+            )
+            Screen.PaymentMethods.route -> PaymentMethodsScreen(
+                workerId = workerId,
+                firestoreRepository = firestoreRepository,
+                onBack = { onNavigate(Screen.Settings.route) }
             )
         }
     }

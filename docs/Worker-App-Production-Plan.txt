@@ -1,0 +1,1118 @@
+﻿================================================================================
+  FIND MY WORK - Worker App Production Readiness Plan
+  "Find My Work" (com.example.findmywork)
+================================================================================
+
+Author:      Prompt Enhancer (Strategic Analysis)
+Created:     July 2026
+Status:      App EXISTS (28 files, 12 screens, 3,200+ lines, builds successfully)
+Package:     com.example.findmywork
+Min SDK:     26 | Target SDK: 35 | Compile SDK: 36
+Tech Stack:  Jetpack Compose, Firebase Auth, Firestore, Firebase Storage, MVVM
+
+================================================================================
+  TABLE OF CONTENTS
+================================================================================
+
+  Preamble - Scope & Assumptions
+  Phase 0: Quick Wins (30 min each)
+  Phase 1: Schema Alignment (CRITICAL - 3-5 hrs)
+  Phase 2: Auth & Onboarding Redesign (2-3 days)
+  Phase 3: Code Hygiene (0.5 day)
+  Phase 4: Security and Indexes (0.5-1 day)
+  Phase 5: Offline Cache (0.5 day)
+  Phase 6: Production Polish (1-2 days)
+  Phase 7: Release Build (0.5 day)
+  Appendix A: Canonical Worker Fields (Firestore)
+  Appendix B: Canonical Job Fields (Firestore)
+  Appendix C: Composite Indexes
+  Appendix D: Firestore Rules (Full Template)
+  Appendix E: ProGuard/R8 Keep Rules
+  Appendix F: FormatUtils.kt - INR Currency Helper
+  Appendix G: Agent Prompt Reference
+
+
+================================================================================
+  PREAMBLE - Scope & Assumptions
+================================================================================
+
+This plan addresses what remains to make the Worker app ("Find My Work")
+production-ready and fully aligned with the Customer app
+("Find My Worker" - com.fixzo).
+
+--- KEY ASSUMPTIONS ---
+
+  [x] Worker app ALREADY EXISTS and BUILDS SUCCESSFULLY
+  [x] Both apps share IDENTICAL Constants.kt (collections, enums, field names)
+  [x] Firebase Auth with Google Sign-In is already working
+  [x] Firebase Storage dependency is already added
+  [x] Firestore persistence is NOT yet enabled
+  [x] google-services.json exists in Customer app but NOT yet in Worker app
+  [x] ProGuard/R8 is disabled (isMinifyEnabled = false)
+  [x] No Crashlytics, no In-App Update, no Room
+  [x] Current prices display with "$" instead of INR symbol
+  [x] Mock AuthRepository.kt exists but is UNUSED
+
+--- CROSS-REFERENCE PATHS ---
+
+  Customer app:  E:\MV\...\Find My Worker
+  Worker app:    E:\MV\...\Find My Work
+  Worker app's canonical google-services.json is in Customer app's
+    app/ folder (has BOTH com.example.findmywork AND com.fixzo registered)
+
+--- DEPENDENCY ORDER ---
+
+  Phase 0 --> Phase 1 --> Phase 2 --> Phase 3 --> Phase 4 --> Phase 5
+                                                                 |
+                                                           Phase 6
+                                                                 |
+                                                           Phase 7
+
+  NOTE: Phases 1-4 can be parallelized with different agents.
+  Phase 5 (Offline Cache) must come after Phase 4 (Security Rules).
+  Phase 6 depends on Phase 0 (currency fix) and Phase 1 (schema alignment).
+  Phase 7 is the final release gate.
+
+================================================================================
+  PHASE 0: QUICK WINS (~30 min each)
+================================================================================
+
+--- 0.1 - Delete Mock AuthRepository.kt ---
+
+  File:   data/repository/AuthRepository.kt
+  Status: UNUSED - MainActivity uses FirebaseAuthRepository directly
+  Action: Delete the file entirely
+  Check:  Run build after deletion - should pass with zero changes elsewhere
+
+  WHY: The mock returns hardcoded "worker1" and is dead code. Keeping it
+       creates confusion about the real auth flow.
+
+--- 0.2 - Fix Hardcoded Collection Strings in FirebaseAuthRepository.kt ---
+
+  File:   data/repository/FirebaseAuthRepository.kt
+  Issue:  Line 86 uses "workers" hardcoded instead of COLLECTION_WORKERS
+
+  Fix:    Add import com.example.findmywork.data.COLLECTION_WORKERS
+          Replace: firestore.collection("workers")
+          With:    firestore.collection(COLLECTION_WORKERS)
+
+  Also check for other hardcoded collection strings in this file.
+
+--- 0.3 - Remove Duplicate JobStatus Enum ---
+
+  File:         data/model/Job.kt (lines 3-5)
+  Duplicate:    enum class JobStatus { PENDING, ACCEPTED, ... }
+
+  Canonical:    data/Constants.kt has the REAL JobStatus (with .value + fromValue())
+
+  Action:
+    1. Delete lines 3-5 from Job.kt (the duplicate enum)
+    2. Update ALL imports from com.example.findmywork.data.model.JobStatus
+       to       com.example.findmywork.data.JobStatus
+    3. Update all .name references to .value (canonical enum has .value not .name)
+
+  Files affected: FirestoreRepository.kt, all 12 screen files, all 4 components.
+
+--- 0.4 - Currency Display: $ --> INR ---
+
+  Goal: All price displays use Indian Rupee (INR) instead of US Dollar ($)
+
+  Action:
+    1. Create file: data/FormatUtils.kt (see Appendix F for code)
+    2. Replace all "$" price formatting in screens/components.
+
+  Files affected:
+    JobCard.kt, ActiveJobScreen.kt, JobHistoryScreen.kt, JobDetailsScreen.kt
+    Also check: HomeDashboardScreen.kt, ProfileScreen.kt, CompleteProfileScreen.kt,
+    EarningsScreen.kt, StatCard.kt
+
+--- 0.5 - Replace google-services.json ---
+
+  Source: E:\MV\...\Find My Worker\app\google-services.json
+  Target: E:\MV\...\Find My Work\app\google-services.json
+
+  WHY: The Customer app's copy has BOTH com.example.findmywork (Worker app)
+       AND com.fixzo (Customer app) registered. The Worker app currently
+       has NO google-services.json at all.
+
+--- PHASE 0 VERIFICATION CHECKLIST ---
+
+  [ ] Build passes after deleting AuthRepository.kt
+  [ ] FirebaseAuthRepository uses COLLECTION_WORKERS constant
+  [ ] No duplicate JobStatus enum exists
+  [ ] All imports point to data.JobStatus (not data.model.JobStatus)
+  [ ] All screens display INR instead of "$"
+  [ ] google-services.json is present in Worker app's app/ folder
+
+
+================================================================================
+  PHASE 1: SCHEMA ALIGNMENT (CRITICAL - 3-5 hrs)
+================================================================================
+
+The Worker and Customer apps MUST read and write IDENTICAL Firestore document
+schemas. Currently the Worker app uses old field names (profession, experience,
+price, rating, address, service) while the Customer app expects new canonical
+field names (categoryIds, experienceYears, totalAmount, ratingSum/ratingCount,
+societyName, categoryName).
+
+--- 1.1 - Rewrite Worker Data Class ---
+
+  File: data/model/Job.kt - Worker data class (lines 25-44)
+
+  Replace with canonical fields (see Appendix A for full reference):
+  - ADD: age, gender, categoryIds (was profession), experienceYears (was experience)
+  - ADD: workingRadiusKm, ratingSum, ratingCount (replaces rating Float)
+  - ADD: aadhaarStatus, aadhaarFront, aadhaarBack, selfieWithAadhaar
+  - ADD: bankAccount, upiId, city
+  - ADD: status (PENDING/ACTIVE/SUSPENDED/REJECTED), worksBeforeAfter
+  - ADD: active (Boolean), rejectionReason (nullable)
+  - KEEP: id, name, email, phone, photo, description, pricing, serviceRadius
+  - KEEP: isOnline, totalJobs, completionRate, totalEarnings, documentsVerified
+  - KEEP: skills, createdAt, updatedAt
+
+--- 1.2 - Rewrite Job Data Class ---
+
+  File: data/model/Job.kt - Job data class (lines 7-23)
+
+  Replace with canonical fields (see Appendix B for full reference):
+  - ADD: customerPhone, workerPhone, workerRating
+  - ADD: flatNo, societyName (was address), landmark, pinCode, city
+  - ADD: categoryId, categoryName, subServiceId, subServiceName
+  - ADD: basePrice, platformFee, gstAmount, discountAmount, totalAmount (was price)
+  - ADD: bookingDate, timeSlot, specialInstructions (was description), photoPath
+  - ADD: cancelledBy, workPhotoBefore, workPhotoAfter
+  - ADD: arrivedAt, startedAt, cancelledAt, disputeReason
+  - ADD: paymentStatus, paymentMethod, geohash, active
+  - KEEP: id, customerId, customerName, customerPhoto, workerId
+  - KEEP: workerName, status, rating, review, createdAt, updatedAt
+  - KEEP: completedAt, acceptedAt, distance
+
+--- 1.3 - Rewrite Review, Notification, Earning Data Classes ---
+
+  Review: ADD workerId, jobId. KEEP customerName, rating, comment, date.
+  Notification: ADD userId, jobId, actionUrl. KEEP id, title, message, type, read, createdAt.
+  Earning: ADD workerId, paymentMethod, transactionId. KEEP date, amount, jobId, customerName.
+
+--- 1.4 - Update docToWorker / docToJob Mappers ---
+
+  File: data/repository/FirestoreRepository.kt
+
+  Use FALLBACK pattern for backward compatibility:
+    val newField = data["newField"] as? Type
+        ?: data["oldField"] as? Type
+        ?: defaultValue
+
+  Examples:
+    val categoryIds = data["categoryIds"] as? List<String>
+        ?: listOf(data["profession"] as? String ?: "")
+    val experienceYears = (data["experienceYears"] as? Long)?.toInt()
+        ?: (data["experience"] as? Long)?.toInt() ?: 0
+    val totalAmount = data["totalAmount"] as? Double
+        ?: data["price"] as? Double ?: 0.0
+
+--- 1.5 - Update FirebaseAuthRepository.kt signup ---
+
+  Write ALL 35+ canonical worker fields at signup. Import WorkerStatus,
+  AadhaarStatus, and COLLECTION_WORKERS from Constants.kt.
+
+--- 1.6 - Update Screen Files for New Fields ---
+
+  Files: HomeDashboardScreen, ProfileScreen, CompleteProfileScreen,
+         ActiveJobScreen, JobDetailsScreen, JobHistoryScreen,
+         AvailableJobsScreen, EarningsScreen, NotificationsScreen,
+         JobCard, StatCard
+
+  Common changes:
+    worker.profession  -->  worker.categoryIds.joinToString()
+    worker.experience  -->  worker.experienceYears
+    job.price          -->  job.totalAmount
+    job.address        -->  job.societyName + ", " + job.city
+    job.description    -->  job.specialInstructions
+    worker.rating      -->  calculate from ratingSum / ratingCount
+
+--- 1.7 - Sensitive Data Sub-collections ---
+
+  Move to workers/{id}/kyc/{doc}: aadhaarFront, aadhaarBack, selfieWithAadhaar, aadhaarStatus
+  Move to workers/{id}/payout/{doc}: bankAccount, upiId
+  Update Firestore Rules accordingly (see Phase 4 and Appendix D).
+
+--- PHASE 1 VERIFICATION CHECKLIST ---
+
+  [ ] Worker data class has all canonical fields (35+)
+  [ ] Job data class has all canonical fields (45+)
+  [ ] Review, Notification, Earning data classes updated
+  [ ] docToWorker/docToJob use fallback pattern
+  [ ] FirebaseAuthRepository writes all canonical fields at signup
+  [ ] All screens reference updated field names
+  [ ] Build passes clean
+
+
+================================================================================
+  PHASE 2: AUTH & ONBOARDING REDESIGN (2-3 days)
+================================================================================
+
+--- 2.1 - Delete Mock AuthRepository.kt ---
+
+  (Already covered in Phase 0.1 - confirm it's done.)
+
+--- 2.2 - Update FirebaseAuthRepository.kt Signup ---
+
+  Write all 35+ canonical fields. Set status=WorkerStatus.ACTIVE for now,
+  aadhaarStatus=AadhaarStatus.PENDING, active=true, createdAt=now, updatedAt=now.
+
+--- 2.3 - Rewrite CompleteProfileScreen.kt as 5-Step Stepper ---
+
+  Current: Single form screen
+  Target:  5-step vertical stepper with shared state
+
+  STEP 1 - Personal Info: name, age, gender, phone (pre-filled from Google)
+  STEP 2 - Service Selection: multi-select categories --> categoryIds
+  STEP 3 - Experience & Pricing: experienceYears, description, pricing, workingRadiusKm, city
+  STEP 4 - Document Upload: Aadhaar front/back/selfie via ActivityResultContracts.GetContent()
+  STEP 5 - Payment Info: bankAccount, upiId (optional)
+
+  On final submit: set status=WorkerStatus.PENDING, upload images, show "Awaiting Approval"
+
+--- 2.4 - Save Partial Progress ---
+
+  Use SetOptions.merge() after each step. On profile screen load, check
+  which steps have data and auto-advance past completed steps.
+
+--- 2.5 - Update ProfileScreen for Pending Status ---
+
+  Show status banners for PENDING, REJECTED, ACTIVE states.
+  Only allow job browsing/accepting when status == ACTIVE.
+
+--- PHASE 2 VERIFICATION CHECKLIST ---
+
+  [ ] AuthRepository.kt deleted (no references remain)
+  [ ] FirebaseAuthRepository writes canonical fields at signup
+  [ ] CompleteProfileScreen has 5 working steps
+  [ ] Image picker + Firebase Storage upload works for Aadhaar docs
+  [ ] Partial progress saves after each step
+  [ ] Users can resume incomplete profiles
+  [ ] Profile screen shows pending/rejected/active status banners
+  [ ] Build passes
+
+
+================================================================================
+  PHASE 3: CODE HYGIENE (0.5 day)
+================================================================================
+
+--- 3.1 - Replace Hardcoded Strings in FirestoreRepository.kt ---
+
+  "workers"      -->  COLLECTION_WORKERS
+  "jobs"         -->  COLLECTION_JOBS
+  "earnings"     -->  COLLECTION_EARNINGS
+  "notifications" --> COLLECTION_NOTIFICATIONS
+  "status"       -->  Fields.STATUS
+  "workerId"     -->  Fields.WORKER_ID
+  "createdAt"    -->  Fields.CREATED_AT
+  "updatedAt"    -->  Fields.UPDATED_AT
+  "acceptedAt"   -->  Fields.ACCEPTED_AT
+  "completedAt"  -->  Fields.COMPLETED_AT
+  "userId"       -->  Fields.CUSTOMER_ID (for notifications)
+  "read"         -->  Fields.READ
+  "date"         -->  Fields.DATE (add if missing)
+  "amount"       -->  Fields.AMOUNT (add if missing)
+  "customerName" -->  Fields.CUSTOMER_NAME (add if missing)
+
+--- 3.2 - Fix MainActivity.kt Line 46 ---
+
+  Change: firestore.collection("workers") --> firestore.collection(COLLECTION_WORKERS)
+
+--- 3.3 - Delete Duplicate JobStatus from Job.kt ---
+
+  (Covered in Phase 0.3 - verify done. Also check StatusChip.kt, TimelineIndicator.kt)
+
+--- 3.4 - Remove Unused Imports ---
+
+  After changes, clean up orphaned imports project-wide.
+
+--- PHASE 3 VERIFICATION CHECKLIST ---
+
+  [ ] No hardcoded collection strings in FirestoreRepo
+  [ ] Field strings use Constants.Fields.* everywhere
+  [ ] MainActivity.kt uses COLLECTION_WORKERS
+  [ ] No duplicate JobStatus exists
+  [ ] No unused imports
+  [ ] Build passes
+
+================================================================================
+  PHASE 4: SECURITY & INDEXES (0.5-1 day)
+================================================================================
+
+--- 4.1 - Firestore Security Rules ---
+
+  Deploy rules covering these patterns (see Appendix D for full template):
+
+  workers/{workerId}:     read=authenticated, create=owner, update=owner|admin, delete=admin
+  jobs/{jobId}:           read=authenticated, create=customer, update=owner|worker|admin, delete=admin
+  users/{userId}:         read/write=owner
+  reviews/{doc}:          create=authenticated, update/delete=admin (immutable)
+  earnings/{doc}:         read=authenticated, write=admin
+  notifications/{doc}:    read=recipient, create=admin, update=mark-read only
+  categories, sub_services: read=authenticated, write=admin
+  workers/{id}/kyc/*:     read/write=owner|admin
+  workers/{id}/payout/*:  read/write=owner|admin
+  Catch-all:              deny
+
+--- 4.2 - Composite Indexes ---
+
+  Create in Firebase Console:
+  1. jobs: status ASC, createdAt DESC
+  2. jobs: workerId ASC, status ASC, createdAt DESC
+  3. jobs: customerId ASC, createdAt DESC
+  4. notifications: userId ASC, createdAt DESC
+  5. earnings: workerId ASC, date DESC
+
+--- 4.3 - Custom Claims for Admin Role ---
+
+  Set { role: "ADMIN" } for admin users via Firebase Admin SDK or Console.
+
+--- PHASE 4 VERIFICATION CHECKLIST ---
+
+  [ ] Firestore rules deployed to production
+  [ ] Composite indexes created (5 indexes)
+  [ ] Admin custom claims set
+  [ ] Test create/read/update/delete for each collection
+  [ ] Verify worker can only update own worker doc
+  [ ] Verify unauthenticated access is denied everywhere
+
+
+================================================================================
+  PHASE 5: OFFLINE CACHE (0.5 day)
+================================================================================
+
+--- 5.1 - Create FindMyWorkApplication.kt ---
+
+  File: data/FindMyWorkApplication.kt
+
+  """
+  package com.example.findmywork.data
+
+  import android.app.Application
+  import com.google.firebase.firestore.FirebaseFirestore
+  import com.google.firebase.firestore.FirebaseFirestoreSettings
+  import com.google.firebase.firestore.CacheSettings
+
+  class FindMyWorkApplication : Application() {
+      override fun onCreate() {
+          super.onCreate()
+          FirebaseFirestore.getInstance().firestoreSettings =
+              FirebaseFirestoreSettings.Builder()
+                  .setPersistenceEnabled(true)
+                  .setCacheSizeBytes(CacheSettings.CACHE_SIZE_UNLIMITED)
+                  .build()
+      }
+  }
+  """
+
+--- 5.2 - Update AndroidManifest.xml ---
+
+  Add: android:name=".data.FindMyWorkApplication" to the <application> tag.
+
+--- 5.3 - Decision: NO Room ---
+
+  Firestore's built-in persistence cache is sufficient for the Worker app's
+  needs. The app reads worker profiles, jobs, earnings, and notifications
+  - all single-document or simple collection queries that Firestore's cache
+  handles well. Room would add unnecessary complexity.
+
+--- PHASE 5 VERIFICATION CHECKLIST ---
+
+  [ ] FindMyWorkApplication.kt created
+  [ ] AndroidManifest.xml updated
+  [ ] Firestore persistence enabled with unlimited cache
+  [ ] App works offline (cached data shows)
+  [ ] Build passes
+
+
+================================================================================
+  PHASE 6: PRODUCTION POLISH (1-2 days)
+================================================================================
+
+--- 6.1 - Currency Formatting (INR) ---
+
+  (Already done in Phase 0.4 - verify it's complete across ALL screens.)
+
+--- 6.2 - Enable ProGuard/R8 ---
+
+  In app/build.gradle.kts, release buildType:
+  - isMinifyEnabled = true
+  - isShrinkResources = true
+  - Add keep rules (see Appendix E)
+
+--- 6.3 - Add Crashlytics ---
+
+  1. Add firebase-crashlytics dependency
+  2. Add Crashlytics Gradle plugin
+  3. Init in FindMyWorkApplication.kt
+
+--- 6.4 - Add In-App Update ---
+
+  1. Add app-update-ktx dependency
+  2. Check on MainActivity.onCreate() with AppUpdateManager
+
+--- 6.5 - Add Empty States ---
+
+  Add empty state composables for:
+  - AvailableJobsScreen: "No jobs available in your area right now"
+  - JobHistoryScreen: "No jobs completed yet" (CTA to browse)
+  - EarningsScreen: "No earnings recorded yet"
+  - NotificationsScreen: "No notifications yet"
+
+--- 6.6 - Dark Theme Persistence ---
+
+  Save to SharedPreferences. Read on startup. Apply to FindMyWorkTheme.
+
+--- 6.7 - Design Polish Items ---
+
+  - Add Snackbar host to MainActivity Scaffold for error messages
+  - Profile incomplete detection uses real field checks
+    (name, phone, categoryIds, experienceYears, pricing, city, docs)
+
+--- PHASE 6 VERIFICATION CHECKLIST ---
+
+  [ ] All prices use INR formatting
+  [ ] ProGuard enabled and release build works
+  [ ] Crashlytics initializes on startup
+  [ ] In-App Update flow works
+  [ ] All list screens show empty states
+  [ ] Dark theme persists across app restarts
+  [ ] Network errors show Snackbar
+  [ ] Profile incomplete detection uses real field checks
+  [ ] Build passes (debug + release)
+
+
+================================================================================
+  PHASE 7: RELEASE BUILD (0.5 day)
+================================================================================
+
+--- 7.1 - Generate Release Keystore ---
+
+  keytool -genkey -v -keystore release.keystore -alias findmywork -keyalg RSA -keysize 2048 -validity 10000
+
+--- 7.2 - Add Signing Config ---
+
+  signingConfigs { create("release") { storeFile, storePassword from env, keyAlias, keyPassword from env } }
+  buildTypes.release.signingConfig = signingConfigs.getByName("release")
+
+--- 7.3 - Build Release Artifacts ---
+
+  ./gradlew bundleRelease    (AAB for Play Store)
+  ./gradlew assembleRelease  (APK for direct install)
+
+--- 7.4 - Pre-Release Checklist (14 items) ---
+
+  [ ] 1. Builds in release mode (./gradlew assembleRelease)
+  [ ] 2. google-services.json present with com.example.findmywork registered
+  [ ] 3. Release keystore generated and stored securely
+  [ ] 4. Signing config uses env vars (no passwords in git)
+  [ ] 5. ProGuard rules include all data models and Firebase classes
+  [ ] 6. Crashlytics reports on launch
+  [ ] 7. In-App Update checks on launch
+  [ ] 8. Firestore rules deployed and tested
+  [ ] 9. Composite indexes created and active
+  [ ] 10. Worker can sign up with Google, complete profile, browse and accept jobs
+  [ ] 11. Status transitions work: PENDING -> ACCEPTED -> STARTED -> COMPLETED
+  [ ] 12. Currency displays INR throughout
+  [ ] 13. Offline persistence works (data available without network)
+  [ ] 14. App handles empty states, network errors, and incomplete profiles gracefully
+
+
+================================================================================
+  APPENDIX A: CANONICAL WORKER FIELDS (Firestore: workers/{workerId})
+================================================================================
+
+  FIELD                TYPE       SOURCE         NOTES
+  -------------------- ---------- -------------- ----------------------------
+  id                   String     PK             Firestore doc ID
+  name                 String     Google Auth    From displayName
+  email                String?    Google Auth    Nullable
+  phone                String     Google Auth    From phoneNumber
+  photo                String     Google Auth    From photoUrl
+  age                  Int        User Input     NEW field
+  gender               String     User Input     NEW field
+  categoryIds          List<Str>  User Input     Was: profession (String)
+  experienceYears      Int        User Input     Was: experience (Int)
+  description          String?    User Input     Nullable
+  pricing              Double?    User Input     Nullable (per job)
+  serviceRadius        Double     Default        Default 10.0
+  workingRadiusKm      Double     User Input     NEW field
+  isOnline             Boolean    Auto           Toggled by app
+  ratingSum            Long       Computed       NEW, replaces rating Float
+  ratingCount          Int        Computed       NEW
+  totalJobs            Int        Computed
+  completionRate       Float?     Computed       Nullable
+  totalEarnings        Double?    Computed       Nullable
+  documentsVerified    Boolean    Admin          Default false
+  aadhaarStatus        String     Admin/System   PENDING/APPROVED/REJECTED
+  aadhaarFront         String     User Upload    Storage URL (moved to KYC)
+  aadhaarBack          String     User Upload    Storage URL (moved to KYC)
+  selfieWithAadhaar    String     User Upload    Storage URL (moved to KYC)
+  bankAccount          String     User Input     Moved to payout sub-collection
+  upiId                String     User Input     Moved to payout sub-collection
+  city                 String     User Input     NEW field
+  skills               List<Str>? User Input     Nullable
+  status               String     System         PENDING/ACTIVE/SUSPENDED/REJECTED
+  worksBeforeAfter     List<Str>  User Upload    Storage URLs (NEW)
+  createdAt            Timestamp  Auto
+  updatedAt            Timestamp  Auto
+  active               Boolean    System         NEW, default true
+  rejectionReason      String?    Admin          Nullable (NEW)
+
+
+================================================================================
+  APPENDIX B: CANONICAL JOB FIELDS (Firestore: jobs/{jobId})
+================================================================================
+
+  FIELD                TYPE       SOURCE         NOTES
+  -------------------- ---------- -------------- ----------------------------
+  id                   String     PK             Firestore doc ID
+  customerId           String     Auth
+  customerName         String     Auth
+  customerPhone        String     Auth           NEW field
+  customerPhoto        String     Auth
+  workerId             String?    System          Assigned when accepted
+  workerName           String?    System          Denormalized
+  workerPhone          String?    System          Denormalized (NEW)
+  workerRating         Float?     System          Denormalized (NEW)
+  flatNo               String     Customer Input  NEW field
+  societyName          String     Customer Input  Was: address
+  landmark             String     Customer Input  NEW field
+  pinCode              String     Customer Input  NEW field
+  city                 String     Customer Input  NEW field
+  categoryId           String     System          NEW field
+  categoryName         String     System          NEW field
+  subServiceId         String     System          NEW field
+  subServiceName       String     System          NEW field
+  basePrice            Double     System          NEW field
+  platformFee          Double     System          NEW field
+  gstAmount            Double     System          NEW field
+  discountAmount       Double     System          NEW field
+  totalAmount          Double     System          Was: price
+  bookingDate          Long       System          NEW field
+  timeSlot             String     Customer Input  NEW field
+  specialInstructions  String     Customer Input  Was: description
+  photoPath            String     Customer Upload NEW field
+  status               String     System          JobStatus.value
+  cancelledBy          String?    System          CUSTOMER/WORKER/ADMIN (NEW)
+  rating               Float      Customer        After completion
+  review               String     Customer        After completion
+  workPhotoBefore      String     Worker Upload   NEW field
+  workPhotoAfter       String     Worker Upload   NEW field
+  createdAt            Timestamp  Auto            Was: timestamp
+  updatedAt            Timestamp  Auto
+  arrivedAt            Timestamp? System          NEW field (when worker arrives)
+  startedAt            Timestamp? System          NEW field
+  completedAt          Timestamp? System
+  acceptedAt           Timestamp? System
+  cancelledAt          Timestamp? System          NEW field
+  disputeReason        String?    System          NEW field
+  paymentStatus        String     System          UNPAID/PAID/REFUND (NEW)
+  paymentMethod        String     System          NEW field
+  geohash              String     System          For geo-queries (NEW)
+  distance             Double     Computed        From customer location
+  active               Boolean    System          NEW field
+
+================================================================================
+  APPENDIX C: COMPOSITE INDEXES
+================================================================================
+
+  Deploy these in Firebase Console > Firestore > Indexes > Add Index
+
+  Index 1: Available Jobs Feed (sorted by newest)
+  ---------------------------------------------------
+  Collection:   jobs
+  Fields:       status     ASC
+                createdAt  DESC
+  ---------------------------------------------------
+  Covers: getAvailableJobsFlow() - jobs with status "PENDING"
+
+  Index 2: Worker's Active Jobs
+  ---------------------------------------------------
+  Collection:   jobs
+  Fields:       workerId   ASC
+                status     ASC
+                createdAt  DESC
+  ---------------------------------------------------
+  Covers: getActiveJobsFlow() - workerId == X, status in [ACCEPTED, ON_THE_WAY, ARRIVED, STARTED]
+
+  Index 3: Worker's Completed Jobs
+  ---------------------------------------------------
+  Collection:   jobs
+  Fields:       workerId   ASC
+                status     ASC
+                createdAt  DESC
+  ---------------------------------------------------
+  (Same as Index 2 - sufficient for IN queries)
+
+  Index 4: Customer's Jobs History
+  ---------------------------------------------------
+  Collection:   jobs
+  Fields:       customerId ASC
+                createdAt  DESC
+  ---------------------------------------------------
+  Covers: Customer app's job history queries
+
+  Index 5: User Notifications
+  ---------------------------------------------------
+  Collection:   notifications
+  Fields:       userId     ASC
+                createdAt  DESC
+  ---------------------------------------------------
+  Covers: getNotificationsFlow()
+
+  Index 6: Worker Earnings
+  ---------------------------------------------------
+  Collection:   earnings
+  Fields:       workerId   ASC
+                date       DESC
+  ---------------------------------------------------
+  Covers: getEarningsFlow()
+
+
+================================================================================
+  APPENDIX D: FIRESTORE RULES (FULL TEMPLATE)
+================================================================================
+
+  Below is the complete firestore.rules file. Deploy to Firebase Console.
+
+  """
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+
+      // --- Helper Functions ---
+      function isAuthenticated() {
+        return request.auth != null;
+      }
+
+      function isAdmin() {
+        return request.auth != null
+            && request.auth.token.role == 'ADMIN';
+      }
+
+      function isOwner(userId) {
+        return request.auth != null
+            && request.auth.uid == userId;
+      }
+
+      function isWorkerOwner(workerId) {
+        return request.auth != null
+            && request.auth.uid == workerId;
+      }
+
+      // --- Workers Profile ---
+      match /workers/{workerId} {
+        allow read: if isAuthenticated();
+        allow create: if isOwner(workerId);
+        allow update: if isOwner(workerId) || isAdmin();
+        allow delete: if isAdmin();
+
+        // Worker sub-collections (KYC, Payout)
+        match /kyc/{doc} {
+          allow read: if isOwner(workerId) || isAdmin();
+          allow write: if isOwner(workerId) || isAdmin();
+        }
+
+        match /payout/{doc} {
+          allow read: if isOwner(workerId) || isAdmin();
+          allow write: if isOwner(workerId) || isAdmin();
+        }
+      }
+
+      // --- Jobs / Bookings ---
+      match /jobs/{jobId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated()
+            && request.resource.data.customerId == request.auth.uid;
+        allow update: if isAuthenticated()
+            && (
+                (isOwner(resource.data.customerId))
+                || (isWorkerOwner(resource.data.workerId))
+                || isAdmin()
+            );
+        allow delete: if isAdmin();
+      }
+
+      // --- Users ---
+      match /users/{userId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // --- Reviews (immutable after creation) ---
+      match /reviews/{doc} {
+        allow create: if isAuthenticated()
+            && request.resource.data.bookingId is string;
+        allow read: if isAuthenticated();
+        allow update, delete: if false;
+      }
+
+      // --- Earnings ---
+      match /earnings/{doc} {
+        allow read: if isAuthenticated();
+        allow create, update, delete: if isAdmin();
+      }
+
+      // --- Notifications ---
+      match /notifications/{doc} {
+        allow read: if isAuthenticated()
+            && request.auth.uid == resource.data.userId;
+        allow create: if isAdmin();
+        allow update: if isAuthenticated()
+            && request.auth.uid == resource.data.userId
+            && request.resource.data.keys().hasOnly(['read']);
+        allow delete: if isAdmin();
+      }
+
+      // --- Service Catalog ---
+      match /categories/{doc} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+
+      match /sub_services/{doc} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+
+      // --- Catch-all: Deny ---
+      match /{document=**} {
+        allow read, write: if false;
+      }
+    }
+  }
+  """
+
+
+================================================================================
+  APPENDIX E: PROGUARD / R8 KEEP RULES
+================================================================================
+
+  Add to app/proguard-rules.pro:
+
+  """
+  # --- Data Models ---
+  -keep class com.example.findmywork.data.model.** { *; }
+  -keepclassmembers class com.example.findmywork.data.model.** { *; }
+
+  # --- Constants (enums keep .value migration) ---
+  -keep class com.example.findmywork.data.Constants$* { *; }
+  -keep enum com.example.findmywork.data.JobStatus { *; }
+  -keepclassmembers enum com.example.findmywork.data.JobStatus { *; }
+
+  # --- Firebase Auth ---
+  -keep class com.google.firebase.auth.** { *; }
+  -keep class com.google.android.libraries.identity.googleid.** { *; }
+
+  # --- Firebase Firestore ---
+  -keep class com.google.firebase.firestore.** { *; }
+
+  # --- Firebase Storage ---
+  -keep class com.google.firebase.storage.** { *; }
+
+  # --- Kotlin Coroutines ---
+  -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+  -keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+
+  # --- Crashlytics ---
+  -keepattributes *Annotation*
+  -keepattributes SourceFile,LineNumberTable
+  -keep public class * extends java.lang.Exception
+  """
+
+
+================================================================================
+  APPENDIX F: FormatUtils.kt - INR Currency Helper
+================================================================================
+
+  File: data/FormatUtils.kt
+
+  """
+  package com.example.findmywork.data
+
+  import java.text.NumberFormat
+  import java.util.Currency
+  import java.util.Locale
+
+  fun formatInr(amount: Double): String {
+      val format = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+      format.currency = Currency.getInstance("INR")
+      format.minimumFractionDigits = if (amount == amount.toLong().toDouble()) 0 else 2
+      format.maximumFractionDigits = 2
+      return format.format(amount)
+  }
+
+  fun formatInr(amount: Int): String = formatInr(amount.toDouble())
+  """
+
+
+================================================================================
+  APPENDIX G: AGENT PROMPT REFERENCE
+================================================================================
+
+  Below are 5 ready-to-use prompts for agents.
+  Copy-paste into your AI tool's prompt field for each agent.
+
+================================================================================
+  AGENT PROMPT 1 -- Schema Alignment (Phase 1)
+  Target: @code-agent
+================================================================================
+
+  Context:
+  Worker app at E:\...\Find My Work, Customer app at E:\...\Find My Worker.
+  Package: com.example.findmywork (Worker), com.fixzo (Customer).
+  Both apps share identical Constants.kt with collection names, enums, field names.
+  The Worker app's data models (Job.kt) and FirestoreRepository.kt mappers need
+  full rewrite to match canonical schemas (see Appendices A and B in the plan doc).
+
+  Role:
+  You are a senior Android/Kotlin developer specializing in Firebase Firestore
+  schema design and data migration.
+
+  Task:
+  Implement Phase 1 (Schema Alignment) of the Worker App Production Readiness Plan:
+
+  1. Rewrite data/model/Job.kt - Worker, Job, Review, Notification, Earning data
+     classes with ALL canonical fields from Appendix A and B.
+
+  2. Update docToWorker/docToJob/docToEarning/docToNotification mappers in
+     FirestoreRepository.kt using the fallback pattern:
+       val newField = data["newField"] as? Type
+           ?: data["oldField"] as? Type
+           ?: defaultValue
+
+  3. Update FirebaseAuthRepository.kt signup to write ALL canonical worker fields.
+
+  4. Update ALL screen and component files to reference new field names
+     (e.g., worker.profession -> worker.categoryIds.joinToString()).
+
+  5. Use JobStatus.value (not .name) and import from
+     com.example.findmywork.data.JobStatus.
+
+  Constraints:
+  - Do NOT change Constants.kt (already canonical in both apps).
+  - Do NOT add Room, DI, or ViewModel changes.
+  - Follow fallback pattern for all mappers to handle old/new field names.
+  - Import Constants (COLLECTION_*, Fields.*, JobStatus, WorkerStatus, etc.)
+
+  Output:
+  - Updated data/model/Job.kt with all canonical data classes.
+  - Updated data/repository/FirestoreRepository.kt with fallback mappers.
+  - Updated data/repository/FirebaseAuthRepository.kt with full signup fields.
+  - Updated all screen/component files for field name changes.
+  - Build must pass: ./gradlew assembleDebug
+
+
+================================================================================
+  AGENT PROMPT 2 -- Auth Redesign (Phase 2)
+  Target: @code-agent
+================================================================================
+
+  Context:
+  Worker app at E:\...\Find My Work. Firebase Auth with Google Sign-In already
+  works. Mock AuthRepository.kt exists but is unused. CompleteProfileScreen.kt
+  exists but is a single-form screen. Phase 1 (Schema Alignment) must be done
+  first as this phase depends on canonical field names.
+
+  Role:
+  You are a senior Android/Kotlin developer specializing in Firebase Auth,
+  Firebase Storage, and multi-step onboarding flows.
+
+  Task:
+  Implement Phase 2 (Auth and Onboarding Redesign):
+
+  1. Delete data/repository/AuthRepository.kt (mock, unused).
+
+  2. Update FirebaseAuthRepository.kt signup to write ALL canonical worker
+     fields (35+) using Constants references. Set status=WorkerStatus.PENDING,
+     aadhaarStatus=AadhaarStatus.PENDING, active=true, createdAt/updatedAt.
+
+  3. Rewrite CompleteProfileScreen.kt as a 5-step stepper:
+     Step 1: Personal Info (name, age, gender, phone - pre-filled)
+     Step 2: Service Selection (multi-select category chips -> categoryIds)
+     Step 3: Experience and Pricing (experienceYears, description, pricing,
+             workingRadiusKm slider, city)
+     Step 4: Document Upload (Aadhaar front/back/selfie via
+             ActivityResultContracts.GetContent() + Firebase Storage upload)
+     Step 5: Payment Info (bankAccount, upiId - optional)
+
+  4. After each step, save partial progress to Firestore with merge=true.
+
+  5. On final submit, set status=WorkerStatus.PENDING.
+
+  6. Update ProfileScreen.kt to show PENDING/REJECTED/ACTIVE status banners.
+
+  Constraints:
+  - Use existing Firebase Storage setup (already in dependencies).
+  - Store uploads at: worker-uploads/{uid}/kyc/{filename}.
+  - Keep the screen in the same file (CompleteProfileScreen.kt).
+  - Match existing Compose style (Material3, dark theme support).
+
+  Output:
+  - Updated CompleteProfileScreen.kt (full 5-step implementation).
+  - Updated FirebaseAuthRepository.kt (canonical signup).
+  - Updated ProfileScreen.kt (status banners).
+  - Build must pass.
+
+
+================================================================================
+  AGENT PROMPT 3 -- Code Hygiene (Phase 3)
+  Target: @code-agent
+================================================================================
+
+  Context:
+  Worker app at E:\...\Find My Work. FirestoreRepository.kt and MainActivity.kt
+  use hardcoded Firestore collection/field strings instead of Constants references.
+  A duplicate JobStatus enum exists in Job.kt.
+
+  Role:
+  You are an Android/Kotlin developer focused on code quality and consistency.
+
+  Task:
+  Implement Phase 3 (Code Hygiene):
+
+  1. In FirestoreRepository.kt, replace ALL hardcoded strings with Constants:
+     "workers"      -> COLLECTION_WORKERS
+     "jobs"         -> COLLECTION_JOBS
+     "earnings"     -> COLLECTION_EARNINGS
+     "notifications" -> COLLECTION_NOTIFICATIONS
+     "status"       -> Fields.STATUS
+     "workerId"     -> Fields.WORKER_ID
+     "createdAt"    -> Fields.CREATED_AT
+     "updatedAt"    -> Fields.UPDATED_AT
+     "acceptedAt"   -> Fields.ACCEPTED_AT
+     "completedAt"  -> Fields.COMPLETED_AT
+     "userId"       -> Fields.CUSTOMER_ID (notifications)
+     "read"         -> Fields.READ
+     "date"         -> Fields.DATE (add if missing)
+     "amount"       -> Fields.AMOUNT (add if missing)
+     "customerName" -> Fields.CUSTOMER_NAME (add if missing)
+
+  2. In MainActivity.kt line 46, replace "workers" with COLLECTION_WORKERS.
+
+  3. Delete the duplicate JobStatus enum from data/model/Job.kt.
+
+  4. Update all imports from data.model.JobStatus to data.JobStatus.
+
+  5. Update JobStatus.name references to JobStatus.value everywhere.
+
+  6. Remove unused imports across all changed files.
+
+  Constraints:
+  - If a constant doesn't exist in Constants.Fields, add it.
+  - Do NOT change business logic - only string to constant replacements.
+  - Match existing field naming conventions in Constants.kt.
+
+  Output:
+  - Updated FirestoreRepository.kt (all constants).
+  - Updated MainActivity.kt (COLLECTION_WORKERS).
+  - Updated Job.kt (duplicate enum removed).
+  - Updated all import statements across the project.
+  - Build must pass.
+
+
+================================================================================
+  AGENT PROMPT 4 -- UI Polish (Phase 6)
+  Target: @design-agent
+================================================================================
+
+  Context:
+  Worker app at E:\...\Find My Work. Existing Material3 Compose UI with dark
+  theme. 12 screens, 4 components. Phase 1 (Schema Alignment) is done.
+
+  Role:
+  You are a senior UI/UX designer specializing in Jetpack Compose Material3
+  and accessible mobile design.
+
+  Task:
+  Implement the UI/UX polish items from Phase 6:
+
+  1. Create FormatUtils.kt (see Appendix F) and replace ALL "$" price
+     formatting with INR across all screens and components.
+     Files: HomeDashboardScreen, ProfileScreen, CompleteProfileScreen,
+            ActiveJobScreen, JobDetailsScreen, JobHistoryScreen,
+            EarningsScreen, JobCard, StatCard.
+
+  2. Add empty state composables for:
+     - AvailableJobsScreen: "No jobs available in your area right now"
+     - JobHistoryScreen: "No jobs completed yet" (CTA to browse)
+     - EarningsScreen: "No earnings recorded yet"
+     - NotificationsScreen: "No notifications yet"
+
+  3. Add Snackbar host to MainActivity Scaffold for network error handling.
+
+  4. Implement dark theme persistence via SharedPreferences.
+
+  5. Verify profile incomplete detection uses real field checks
+     (name, phone, categoryIds, experienceYears, pricing, city, docs).
+
+  6. Ensure all price labels say "Total Amount" or similar (not "Price").
+
+  Constraints:
+  - Use existing FindMyWorkTheme (dark/light toggle already works).
+  - Empty states should use Material3 patterns.
+  - Snackbar should show "Check your internet connection" on failures.
+  - Match existing component patterns and styles.
+
+  Output:
+  - Created data/FormatUtils.kt.
+  - Updated all price displays to INR.
+  - Empty state composables added to all list screens.
+  - Snackbar host added to MainActivity.
+  - Dark theme persistence implemented.
+  - Build must pass.
+
+
+================================================================================
+  AGENT PROMPT 5 -- Security Rules Deployment (Phase 4)
+  Target: @code-agent
+================================================================================
+
+  Context:
+  Worker app at E:\...\Find My Work. Current firestore.rules in the Customer
+  app (E:\...\Find My Worker) has rules for bookings/providers. These need to
+  be replaced/extended for the Worker app's collections (workers, jobs, earnings,
+  notifications, kyc, payout). Composite indexes are also needed.
+
+  Role:
+  You are a Firebase security and infrastructure engineer.
+
+  Task:
+  Implement Phase 4 (Security and Indexes):
+
+  1. Replace E:\...\Find My Worker\firestore.rules with the full rules from
+     Appendix D - covering workers, jobs, users, reviews, earnings, notifications,
+     categories, sub_services, kyc, payout, and catch-all deny.
+
+  2. Add helper functions: isAuthenticated(), isAdmin(), isOwner(userId),
+     isWorkerOwner(workerId).
+
+  3. Deploy the rules using Firebase Console paste or: firebase deploy
+
+  4. Create composite indexes (via Firebase Console):
+     - jobs: status ASC, createdAt DESC
+     - jobs: workerId ASC, status ASC, createdAt DESC
+     - jobs: customerId ASC, createdAt DESC
+     - notifications: userId ASC, createdAt DESC
+     - earnings: workerId ASC, date DESC
+
+  5. Verify admin custom claims are set for at least one test user.
+
+  Constraints:
+  - Rules must allow workers to read/write their own KYC and payout sub-cols.
+  - Rules must allow customers to create jobs (for Customer app interop).
+  - Requires Firebase Console access - document exact steps.
+
+  Output:
+  - Updated firestore.rules file.
+  - Deployment instructions (Firebase Console steps or CLI commands).
+  - Index creation guide.
+  - Verification steps to test each rule.
+
+
+================================================================================
+  END OF DOCUMENT
+================================================================================

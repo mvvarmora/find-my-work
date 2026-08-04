@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,7 +39,8 @@ import com.example.findmywork.data.repository.FirestoreRepository
 @Composable
 fun NotificationsScreen(
     workerId: String?,
-    firestoreRepository: FirestoreRepository
+    firestoreRepository: FirestoreRepository,
+    onBack: () -> Unit = {}
 ) {
     val notifications by firestoreRepository.getNotificationsFlow(workerId ?: "")
         .collectAsState(initial = emptyList())
@@ -49,12 +51,19 @@ fun NotificationsScreen(
             .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
-        Text(
-            text = "Notifications",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp, top = 8.dp)
-        )
+        // Header with back button
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Notifications",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
 
         if (notifications.isEmpty()) {
             Text(

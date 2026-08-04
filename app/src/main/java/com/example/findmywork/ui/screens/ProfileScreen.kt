@@ -20,22 +20,36 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import com.example.findmywork.data.repository.FirestoreRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProfileScreen(
@@ -45,14 +59,21 @@ fun ProfileScreen(
 ) {
     val worker by firestoreRepository.getWorkerFlow(workerId ?: "")
         .collectAsState(initial = null)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .verticalScroll(rememberScrollState())
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .verticalScroll(rememberScrollState())
+                .padding(paddingValues)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -132,7 +153,7 @@ fun ProfileScreen(
                                 color = if (w.isOnline) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
                             )
                         }
-                        Text(w.profession.ifBlank { "Professional" }, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(w.skills.firstOrNull()?.replaceFirstChar { it.uppercase() } ?: "Professional", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -143,7 +164,7 @@ fun ProfileScreen(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                "%.1f".format(w.rating),
+                                "%.1f".format(if (w.ratingCount > 0) w.ratingSum / w.ratingCount else 0.0),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.tertiary
                             )
@@ -174,7 +195,7 @@ fun ProfileScreen(
                         ProfileMenuItem(
                             icon = Icons.Rounded.Work,
                             title = "Experience",
-                            subtitle = "${w.experience} years"
+                            subtitle = "${w.experienceYears} years"
                         )
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
                         ProfileMenuItem(
@@ -195,9 +216,56 @@ fun ProfileScreen(
                             subtitle = if (w.documentsVerified) "Verified" else "Not verified",
                             iconColor = if (w.documentsVerified) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                        ProfileMenuItem(
+                            icon = Icons.Rounded.Payment,
+                            title = "UPI ID",
+                            subtitle = if (w.upiId.isNotBlank()) w.upiId else "Not set"
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                if (w.upiId.isNotBlank()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                val clip = ClipData.newPlainText("UPI ID", w.upiId)
+                                clipboard.setPrimaryClip(clip)
+                                scope.launch { snackbarHostState.showSnackbar("UPI ID copied!") }
+                            },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("Copy UPI ID")
+                        }
+                        Button(
+                            onClick = {
+                                val shareText = "Pay me via UPI: ${w.upiId}"
+                                val sendIntent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    putExtra(Intent.EXTRA_TEXT, shareText)
+                                    type = "text/plain"
+                                }
+                                context.startActivity(Intent.createChooser(sendIntent, "Share via"))
+                            },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text("Share Payment Link")
+                        }
                     }
                 }
             }
+        }
         }
     }
 }

@@ -46,9 +46,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.findmywork.ui.components.StatusChip
 import com.example.findmywork.ui.components.StatCard
-import com.example.findmywork.data.model.JobStatus
 import com.example.findmywork.data.repository.FirestoreRepository
 import kotlinx.coroutines.launch
+import com.example.findmywork.data.formatInr
 import java.util.Calendar
 
 @Composable
@@ -126,9 +126,11 @@ fun HomeDashboardScreen(
                     onNavigateToActiveJob = { onNavigateToActiveJob(currentJob.id) }
                 )
             }
+            val avgRating = if ((worker?.ratingCount ?: 0) > 0)
+                (worker!!.ratingSum / worker!!.ratingCount).toFloat() else 0f
             QuickStats(
                 totalJobs = worker?.totalJobs ?: 0,
-                rating = worker?.rating ?: 0f,
+                rating = avgRating,
                 completionRate = worker?.completionRate ?: 0f,
                 totalEarnings = worker?.totalEarnings ?: 0.0
             )
@@ -227,7 +229,7 @@ private fun TodaysEarningsCard(earnings: Double, onNavigateToEarnings: () -> Uni
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
                 )
                 Text(
-                    text = "$${String.format("%.2f", earnings)}",
+                    text = formatInr(earnings),
                     style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.Bold,
@@ -299,7 +301,7 @@ private fun CurrentJobSection(
                     Column {
                         Text(job.customerName, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "${job.service}",
+                            job.subServiceName,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -308,7 +310,13 @@ private fun CurrentJobSection(
                 }
                 Spacer(modifier = Modifier.height(16.dp))
 
-                if (job.address.isNotBlank()) {
+                val addressStr = listOfNotNull(
+                    job.flatNo.takeIf { it.isNotBlank() },
+                    job.societyName.takeIf { it.isNotBlank() },
+                    job.landmark.takeIf { it.isNotBlank() },
+                    job.city.takeIf { it.isNotBlank() }
+                ).joinToString(", ")
+                if (addressStr.isNotBlank()) {
                     Card(
                         shape = RoundedCornerShape(8.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
@@ -326,7 +334,7 @@ private fun CurrentJobSection(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                job.address,
+                                addressStr,
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -389,7 +397,7 @@ private fun QuickStats(
             item {
                 StatCard(
                     icon = Icons.Rounded.Payments,
-                    value = "$${String.format("%.0f", totalEarnings)}",
+                    value = formatInr(totalEarnings),
                     label = "Earnings",
                     iconColor = MaterialTheme.colorScheme.primary
                 )

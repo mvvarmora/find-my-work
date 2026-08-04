@@ -1,6 +1,6 @@
 package com.example.findmywork.ui.screens
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.automirrored.rounded.*
 import androidx.compose.material.icons.rounded.*
 
 import androidx.compose.foundation.background
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.IconButton
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,12 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.findmywork.data.repository.FirestoreRepository
+import com.example.findmywork.data.formatInr
 import java.util.Calendar
 
 @Composable
 fun EarningsScreen(
     workerId: String?,
-    firestoreRepository: FirestoreRepository
+    firestoreRepository: FirestoreRepository,
+    onBack: () -> Unit = {}
 ) {
     val earnings by firestoreRepository.getEarningsFlow(workerId ?: "")
         .collectAsState(initial = emptyList())
@@ -60,8 +63,14 @@ fun EarningsScreen(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("Earnings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        // Header with back button
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Earnings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -74,7 +83,7 @@ fun EarningsScreen(
                 Text("Total Earnings", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "$${String.format("%.0f", totalEarnings)}",
+                    formatInr(totalEarnings),
                     style = MaterialTheme.typography.displayLarge,
                     color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Bold
@@ -90,7 +99,7 @@ fun EarningsScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            "$${String.format("%.0f", todayEarnings)} earned today",
+                            "${formatInr(todayEarnings)} earned today",
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -127,7 +136,7 @@ fun EarningsScreen(
                             }
                         }
                         Text(
-                            text = "$${String.format("%.0f", earning.amount)}",
+                            text = formatInr(earning.amount),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
