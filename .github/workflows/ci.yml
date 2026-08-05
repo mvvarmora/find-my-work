@@ -1,0 +1,26 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-home-cache-cleanup: true
+      - name: L1 unit tests
+        run: ./gradlew testDebugUnitTest --stacktrace --no-daemon
+      - name: Roborazzi screenshot regression
+        run: ./gradlew verifyRoborazziDebug --stacktrace --no-daemon
+      - name: Assemble debug APK
+        run: ./gradlew assembleDebug --stacktrace --no-daemon
