@@ -194,7 +194,7 @@ fun CompleteProfileScreen(
 
         OutlinedTextField(
             value = pricing, onValueChange = { pricing = it },
-            label = { Text("Hourly Rate ($)") }, modifier = Modifier.fillMaxWidth(),
+            label = { Text("Hourly Rate (₹)") }, modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant),
             singleLine = true

@@ -111,3 +111,25 @@ val LightOutline = Color(0xFF767680)
 val LightOutlineVariant = Color(0xFFCAC4D0)
 
 val TrueBlack = Color(0xFF000000)
+
+// ─── FMW Brand Tokens ───
+// Brand: NFC Navy #1A3C8F / Amber #FFB800. Names aligned with the Find My Worker
+// (customer) app so both apps render the same brand system.
+val FMWNavy = Color(0xFF1A3C8F)              // Navy blue primary
+val FMWPrimaryLight = Color(0xFFEBF0FF)     // Light blue badge bg
+val FMWAccent = Color(0xFFFFB800)           // Amber accent
+val FMWAmber = Color(0xFFFFB800)            // Amber accent (alias)
+val FMWAmberSoft = Color(0xFFFFF6E0)        // Amber-tinted container bg (chips, selection)
+val FMWSuccess = Color(0xFF22C55E)          // Success green
+val FMWDanger = Color(0xFFEF4444)           // Danger red
+val FMWBgApp = Color(0xFFF5F7FA)            // Light app workspace bg
+val FMWBgCard = Color(0xFFFFFFFF)           // Clean white container cards
+val FMWTextPrimary = Color(0xFF1A1A2E)      // Body text primary
+val FMWTextSecondary = Color(0xFF6B7280)    // Body text secondary
+val FMWBorder = Color(0xFFE5E7EB)           // Border hairline
+val FMWNavyDeep = Color(0xFF122B66)         // Gradient end / pressed / dark surface text
+val FMWNavyGradientStart = Color(0xFF1A3C8F) // Hero gradient top
+val FMWNavyGradientEnd = Color(0xFF2E5BD6)   // Hero gradient bottom
+val FMWShadowDefault = Color(0x1A1A3A8F)     // Black-alpha navy for card shadows
+val FMWDangerSoft = Color(0xFFFEF2F2)        // Danger soft container for error cards
+val FMWSuccessSoft = Color(0xFFF0FDF4)       // Success soft container

@@ -6,6 +6,7 @@ import com.example.findmywork.data.model.Notification
 import com.example.findmywork.data.model.Review
 import com.example.findmywork.data.model.ServiceCategory
 import com.example.findmywork.data.model.Worker
+import com.example.findmywork.data.model.WorkerProfile
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
@@ -182,6 +183,26 @@ class FirestoreRepository {
     suspend fun saveWorkerProfile(workerId: String, data: Map<String, Any>) {
         firestore.collection(COLLECTION_WORKERS).document(workerId)
             .set(data, SetOptions.merge()).await()
+    }
+
+    /**
+     * One-shot read of the rich worker profile document, mapping legacy worker
+     * fields (pricing, serviceRadius, description, ...) into the new model.
+     */
+    suspend fun getWorkerProfile(workerId: String): WorkerProfile? {
+        if (workerId.isBlank()) return null
+        val doc = firestore.collection(COLLECTION_WORKERS).document(workerId).get().await()
+        return if (doc.exists()) doc.data?.let { WorkerProfile.fromMap(it) } else null
+    }
+
+    /**
+     * Writes all rich profile fields (pricing, packages, offers, payment, skills,
+     * categories, ...) to the worker document using a merge so existing fields
+     * such as ratings and earnings history are preserved.
+     */
+    suspend fun saveWorkerProfile(workerId: String, profile: WorkerProfile) {
+        firestore.collection(COLLECTION_WORKERS).document(workerId)
+            .set(profile.toMap(), SetOptions.merge()).await()
     }
 
     suspend fun updateWorkerField(workerId: String, field: String, value: Any) {

@@ -19,6 +19,7 @@ import com.example.findmywork.ui.screens.JobHistoryScreen
 import com.example.findmywork.ui.screens.LoginScreen
 import com.example.findmywork.ui.screens.NotificationsScreen
 import com.example.findmywork.ui.screens.PaymentMethodsScreen
+import com.example.findmywork.ui.screens.ProfileEditScreen
 import com.example.findmywork.ui.screens.ProfileScreen
 import com.example.findmywork.ui.screens.SettingsScreen
 import com.example.findmywork.ui.screens.SplashScreen
@@ -34,6 +35,7 @@ sealed class Screen(val route: String) {
     data object JobHistory : Screen("job_history")
     data object Earnings : Screen("earnings")
     data object Profile : Screen("profile")
+    data object ProfileEdit : Screen("profile_edit")
     data object Settings : Screen("settings")
     data object Notifications : Screen("notifications")
     data object PaymentMethods : Screen("payment_methods")
@@ -128,12 +130,19 @@ fun NavGraph(
             Screen.Profile.route -> ProfileScreen(
                 workerId = workerId,
                 firestoreRepository = firestoreRepository,
-                onNavigateToSettings = { onNavigate(Screen.Settings.route) }
+                onNavigateToSettings = { onNavigate(Screen.Settings.route) },
+                onEditProfile = { onNavigate(Screen.ProfileEdit.route) }
+            )
+            Screen.ProfileEdit.route -> ProfileEditScreen(
+                workerId = workerId,
+                firestoreRepository = firestoreRepository,
+                onBack = { onNavigate(Screen.Profile.route) }
             )
             Screen.Settings.route -> SettingsScreen(
                 isDarkTheme = isDarkTheme,
                 onToggleTheme = onToggleTheme,
                 onSignOut = onSignOut,
+                onNavigateToEditProfile = { onNavigate(Screen.ProfileEdit.route) },
                 onNavigateToPaymentMethods = { onNavigate(Screen.PaymentMethods.route) },
                 onNavigateToNotifications = { onNavigate(Screen.Notifications.route) },
                 onBack = { onNavigate(Screen.Profile.route) }

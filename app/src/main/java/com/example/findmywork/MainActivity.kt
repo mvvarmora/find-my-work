@@ -85,6 +85,7 @@ class MainActivity : ComponentActivity() {
                         currentScreen != Screen.Login.route) {
                         currentScreen = when (currentScreen) {
                             Screen.Settings.route -> Screen.Profile.route
+                            Screen.ProfileEdit.route -> Screen.Profile.route
                             Screen.PaymentMethods.route -> Screen.Settings.route
                             Screen.Notifications.route -> Screen.HomeDashboard.route
                             Screen.Earnings.route -> Screen.HomeDashboard.route
