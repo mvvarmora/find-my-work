@@ -1,5 +1,7 @@
 package com.example.findmywork.ui.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 
 // Dark theme colors
@@ -112,24 +114,200 @@ val LightOutlineVariant = Color(0xFFCAC4D0)
 
 val TrueBlack = Color(0xFF000000)
 
-// ─── FMW Brand Tokens ───
-// Brand: NFC Navy #1A3C8F / Amber #FFB800. Names aligned with the Find My Worker
-// (customer) app so both apps render the same brand system.
-val FMWNavy = Color(0xFF1A3C8F)              // Navy blue primary
-val FMWPrimaryLight = Color(0xFFEBF0FF)     // Light blue badge bg
-val FMWAccent = Color(0xFFFFB800)           // Amber accent
-val FMWAmber = Color(0xFFFFB800)            // Amber accent (alias)
-val FMWAmberSoft = Color(0xFFFFF6E0)        // Amber-tinted container bg (chips, selection)
-val FMWSuccess = Color(0xFF22C55E)          // Success green
-val FMWDanger = Color(0xFFEF4444)           // Danger red
-val FMWBgApp = Color(0xFFF5F7FA)            // Light app workspace bg
-val FMWBgCard = Color(0xFFFFFFFF)           // Clean white container cards
-val FMWTextPrimary = Color(0xFF1A1A2E)      // Body text primary
-val FMWTextSecondary = Color(0xFF6B7280)    // Body text secondary
-val FMWBorder = Color(0xFFE5E7EB)           // Border hairline
-val FMWNavyDeep = Color(0xFF122B66)         // Gradient end / pressed / dark surface text
-val FMWNavyGradientStart = Color(0xFF1A3C8F) // Hero gradient top
-val FMWNavyGradientEnd = Color(0xFF2E5BD6)   // Hero gradient bottom
-val FMWShadowDefault = Color(0x1A1A3A8F)     // Black-alpha navy for card shadows
-val FMWDangerSoft = Color(0xFFFEF2F2)        // Danger soft container for error cards
-val FMWSuccessSoft = Color(0xFFF0FDF4)       // Success soft container
+// ─── FMW Static Color Constants (Light / Dark) ───
+val FMWNavyLight = Color(0xFF173B7A)
+val FMWNavyDark = Color(0xFF82A8FF)
+
+val FMWNavyDeepLight = Color(0xFF0E2552)
+val FMWNavyDeepDark = Color(0xFFF1F5F9)
+
+val FMWPrimaryBlueLight = Color(0xFF2457C5)
+val FMWPrimaryBlueDark = Color(0xFF6B9CFF)
+
+val FMWPrimaryLightLight = Color(0xFFEAF1FB)
+val FMWPrimaryLightDark = Color(0xFF1E293B)
+
+val FMWOrangeSoftLight = Color(0xFFFFF4EB)
+val FMWOrangeSoftDark = Color(0xFF2E1C0C)
+
+val FMWAmberSoftLight = Color(0xFFFEF3C7)
+val FMWAmberSoftDark = Color(0xFF2E240C)
+
+val FMWSuccessSoftLight = Color(0xFFDCFCE7)
+val FMWSuccessSoftDark = Color(0xFF132E1D)
+
+val FMWDangerSoftLight = Color(0xFFFEE2E2)
+val FMWDangerSoftDark = Color(0xFF361416)
+
+val FMWBgAppLight = Color(0xFFF7F8FA)
+val FMWBgAppDark = Color(0xFF121418)
+
+val FMWBgCardLight = Color(0xFFFFFFFF)
+val FMWBgCardDark = Color(0xFF1C1F26)
+
+val FMWTextPrimaryLight = Color(0xFF172033)
+val FMWTextPrimaryDark = Color(0xFFF1F5F9)
+
+val FMWTextSecondaryLight = Color(0xFF667085)
+val FMWTextSecondaryDark = Color(0xFF94A3B8)
+
+val FMWMutedTextLight = Color(0xFF98A2B3)
+val FMWMutedTextDark = Color(0xFF64748B)
+
+val FMWBorderLight = Color(0xFFE5E7EB)
+val FMWBorderDark = Color(0xFF2A2E39)
+
+val FMWCategoryOrangeLight = Color(0xFFFFF1EB)
+val FMWCategoryOrangeDark = Color(0xFF2E1C0C)
+
+val FMWCategoryBlueLight = Color(0xFFEAF2FF)
+val FMWCategoryBlueDark = Color(0xFF16253D)
+
+val FMWCategoryGreenLight = Color(0xFFEBF8F2)
+val FMWCategoryGreenDark = Color(0xFF12281E)
+
+val FMWCategoryPurpleLight = Color(0xFFF3EBF9)
+val FMWCategoryPurpleDark = Color(0xFF261933)
+
+val FMWCategoryYellowLight = Color(0xFFFEF9E7)
+val FMWCategoryYellowDark = Color(0xFF2B2510)
+
+val FMWCategoryCoralLight = Color(0xFFFDECEC)
+val FMWCategoryCoralDark = Color(0xFF2B1414)
+
+val FMWCategoryTealLight = Color(0xFFE6F7F7)
+val FMWCategoryTealDark = Color(0xFF0F2626)
+
+// ─── Constant Accent Tokens (Universal in Light & Dark) ───
+val FMWOrangeCTA = Color(0xFFFF7A00)         // Warm energetic Orange CTA
+val FMWOrangeWarm = Color(0xFFFF9A1F)        // Secondary warm orange
+val FMWAccent = Color(0xFFFF7A00)            // Accent alias
+val FMWOrange = Color(0xFFFF7A00)            // Alias for FMWOrangeCTA
+val FMWAmber = Color(0xFFF5B942)             // Star rating & warning amber
+val FMWSuccess = Color(0xFF22C55E)           // Success green
+val FMWDanger = Color(0xFFEF4444)            // Danger / error red
+val FMWShadowDefault = Color(0x14173B7A)     // Subtle navy drop shadow
+
+// ─── Dynamic Brand Tokens (Reacting to Light / Dark Theme) ───
+val FMWNavy: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWNavyDark else FMWNavyLight
+
+val FMWNavyDeep: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWNavyDeepDark else FMWNavyDeepLight
+
+val FMWPrimaryBlue: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWPrimaryBlueDark else FMWPrimaryBlueLight
+
+val FMWPrimaryLight: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWPrimaryLightDark else FMWPrimaryLightLight
+
+val FMWOrangeSoft: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWOrangeSoftDark else FMWOrangeSoftLight
+
+val FMWAmberSoft: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWAmberSoftDark else FMWAmberSoftLight
+
+val FMWSuccessSoft: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWSuccessSoftDark else FMWSuccessSoftLight
+
+val FMWDangerSoft: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWDangerSoftDark else FMWDangerSoftLight
+
+val FMWBgApp: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWBgAppDark else FMWBgAppLight
+
+val FMWBgCard: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWBgCardDark else FMWBgCardLight
+
+val FMWTextPrimary: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWTextPrimaryDark else FMWTextPrimaryLight
+
+val FMWTextSecondary: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWTextSecondaryDark else FMWTextSecondaryLight
+
+val FMWMutedText: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWMutedTextDark else FMWMutedTextLight
+
+val FMWTextMuted: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = FMWMutedText
+
+val FMWBorder: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWBorderDark else FMWBorderLight
+
+val FMWNavyGradientStart: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) Color(0xFF1E3A5F) else Color(0xFF173B7A)
+
+val FMWNavyGradientEnd: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) Color(0xFF28548A) else Color(0xFF2457C5)
+
+// Category soft pastel backgrounds
+val FMWCategoryOrange: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWCategoryOrangeDark else FMWCategoryOrangeLight
+
+val FMWCategoryBlue: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWCategoryBlueDark else FMWCategoryBlueLight
+
+val FMWCategoryGreen: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWCategoryGreenDark else FMWCategoryGreenLight
+
+val FMWCategoryPurple: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWCategoryPurpleDark else FMWCategoryPurpleLight
+
+val FMWCategoryYellow: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWCategoryYellowDark else FMWCategoryYellowLight
+
+val FMWCategoryCoral: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWCategoryCoralDark else FMWCategoryCoralLight
+
+val FMWCategoryTeal: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = if (LocalIsDarkTheme.current) FMWCategoryTealDark else FMWCategoryTealLight
+
+

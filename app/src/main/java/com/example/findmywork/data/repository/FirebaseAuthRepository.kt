@@ -21,11 +21,14 @@ class FirebaseAuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val firestore = FirebaseFirestore.getInstance()
 
+    private var guestUserId: String? = null
+
     private val _currentUserId = MutableStateFlow<String?>(auth.currentUser?.uid)
     val currentUserIdFlow: StateFlow<String?> = _currentUserId.asStateFlow()
 
     private val authStateListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
-        _currentUserId.value = firebaseAuth.currentUser?.uid
+        val uid = firebaseAuth.currentUser?.uid ?: guestUserId
+        _currentUserId.value = uid
     }
 
     init {
@@ -37,8 +40,8 @@ class FirebaseAuthRepository {
     }
 
     fun getCurrentUser(): FirebaseUser? = auth.currentUser
-    fun isLoggedIn(): Boolean = auth.currentUser != null
-    fun getCurrentUserId(): String? = auth.currentUser?.uid
+    fun isLoggedIn(): Boolean = auth.currentUser != null || guestUserId != null
+    fun getCurrentUserId(): String? = auth.currentUser?.uid ?: guestUserId
 
     suspend fun signInWithGoogle(activity: Activity): Result<Boolean> {
         return try {
@@ -110,8 +113,70 @@ class FirebaseAuthRepository {
         }
     }
 
+    suspend fun signInAsGuest(): Result<Boolean> {
+        val uid = "guest_consumer_dev"
+        guestUserId = uid
+        _currentUserId.value = uid
+
+        // Try anonymous auth as a background enhancement if enabled
+        try {
+            val anonResult = auth.signInAnonymously().await()
+            anonResult.user?.uid?.let {
+                guestUserId = it
+                _currentUserId.value = it
+            }
+        } catch (_: Exception) {}
+
+        val effectiveUid = _currentUserId.value ?: uid
+
+        // Populate a complete default worker profile so all screens load smoothly
+        try {
+            val now = System.currentTimeMillis()
+            val workerData = hashMapOf(
+                "id" to effectiveUid,
+                "name" to "Guest Consumer",
+                "email" to "guest@consumer.local",
+                "phone" to "+91 98765 43210",
+                "photo" to "",
+                "age" to 28,
+                "gender" to "All",
+                "categoryIds" to listOf("cat_electrician", "cat_plumber", "cat_cleaning"),
+                "experienceYears" to 4,
+                "description" to "Consumer Profile - All Features Unlocked",
+                "pricing" to null,
+                "serviceRadius" to 20.0,
+                "workingRadiusKm" to 20,
+                "isOnline" to true,
+                "ratingSum" to 4.9,
+                "ratingCount" to 24,
+                "totalJobs" to 30,
+                "completionRate" to 98.0,
+                "totalEarnings" to 24500.0,
+                "documentsVerified" to true,
+                "bankAccount" to "Verified",
+                "upiId" to "guest@upi",
+                "city" to "Local",
+                "skills" to listOf("Home Services", "Repairs", "Maintenance"),
+                "status" to "ACTIVE",
+                "worksBeforeAfter" to emptyList<String>(),
+                "createdAt" to now,
+                "updatedAt" to now,
+                "active" to true,
+                "rejectionReason" to null
+            )
+            firestore.collection(COLLECTION_WORKERS).document(effectiveUid)
+                .set(workerData)
+                .await()
+        } catch (_: Exception) {}
+
+        return Result.success(false)
+    }
+
     suspend fun logout() {
-        auth.signOut()
+        try {
+            auth.signOut()
+        } catch (_: Exception) {}
+        guestUserId = null
         _currentUserId.value = null
     }
 

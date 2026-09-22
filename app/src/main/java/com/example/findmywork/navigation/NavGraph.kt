@@ -5,11 +5,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.launch
 import com.example.findmywork.data.repository.FirebaseAuthRepository
 import com.example.findmywork.data.repository.FirestoreRepository
 import com.example.findmywork.ui.screens.ActiveJobScreen
+import com.example.findmywork.ui.screens.AdminDashboardScreen
 import com.example.findmywork.ui.screens.AvailableJobsScreen
 import com.example.findmywork.ui.screens.CompleteProfileScreen
 import com.example.findmywork.ui.screens.EarningsScreen
@@ -39,6 +42,7 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
     data object Notifications : Screen("notifications")
     data object PaymentMethods : Screen("payment_methods")
+    data object AdminDashboard : Screen("admin_dashboard")
 }
 
 @Composable
@@ -50,7 +54,7 @@ fun NavGraph(
     authRepository: FirebaseAuthRepository,
     firestoreRepository: FirestoreRepository,
     workerId: String?,
-    isDarkTheme: Boolean = true,
+    isDarkTheme: Boolean = false,
     onToggleTheme: () -> Unit = {},
     onLoginSuccess: (Boolean) -> Unit = {},
     onProfileComplete: () -> Unit = {},
@@ -58,13 +62,19 @@ fun NavGraph(
     modifier: Modifier = Modifier
 ) {
     var currentJobId by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     Box(modifier = modifier) {
         when (currentScreen) {
             Screen.Splash.route -> SplashScreen(
                 isLoggedIn = isLoggedIn,
                 hasCompletedProfile = hasCompletedProfile,
-                onNavigate = onNavigate
+                onNavigate = onNavigate,
+                onAutoGuestLogin = {
+                    scope.launch {
+                        authRepository.signInAsGuest()
+                    }
+                }
             )
             Screen.Login.route -> LoginScreen(
                 authRepository = authRepository,
@@ -90,12 +100,20 @@ fun NavGraph(
             Screen.HomeDashboard.route -> HomeDashboardScreen(
                 workerId = workerId,
                 firestoreRepository = firestoreRepository,
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
                 onNavigateToNotifications = { onNavigate(Screen.Notifications.route) },
                 onNavigateToActiveJob = { jobId ->
                     currentJobId = jobId
                     onNavigate(Screen.ActiveJob.route)
                 },
-                onNavigateToEarnings = { onNavigate(Screen.Earnings.route) }
+                onNavigateToEarnings = { onNavigate(Screen.Earnings.route) },
+                onNavigateToProfile = { onNavigate(Screen.Profile.route) },
+                onNavigateToAvailableJobs = { onNavigate(Screen.AvailableJobs.route) },
+                onNavigateToJobDetails = { jobId ->
+                    currentJobId = jobId
+                    onNavigate(Screen.JobDetails.route)
+                }
             )
             Screen.AvailableJobs.route -> AvailableJobsScreen(
                 workerId = workerId,
@@ -103,6 +121,10 @@ fun NavGraph(
                 onNavigateToJobDetails = { jobId ->
                     currentJobId = jobId
                     onNavigate(Screen.JobDetails.route)
+                },
+                onNavigateToActiveJob = { jobId ->
+                    currentJobId = jobId
+                    onNavigate(Screen.ActiveJob.route)
                 }
             )
             Screen.JobDetails.route -> JobDetailsScreen(
@@ -120,7 +142,11 @@ fun NavGraph(
             )
             Screen.JobHistory.route -> JobHistoryScreen(
                 workerId = workerId,
-                firestoreRepository = firestoreRepository
+                firestoreRepository = firestoreRepository,
+                onSelectJob = { jobId ->
+                    currentJobId = jobId
+                    onNavigate(Screen.JobDetails.route)
+                }
             )
             Screen.Earnings.route -> EarningsScreen(
                 workerId = workerId,
@@ -130,8 +156,15 @@ fun NavGraph(
             Screen.Profile.route -> ProfileScreen(
                 workerId = workerId,
                 firestoreRepository = firestoreRepository,
+                isDarkTheme = isDarkTheme,
+                onToggleTheme = onToggleTheme,
                 onNavigateToSettings = { onNavigate(Screen.Settings.route) },
-                onEditProfile = { onNavigate(Screen.ProfileEdit.route) }
+                onEditProfile = { onNavigate(Screen.ProfileEdit.route) },
+                onNavigateToEarnings = { onNavigate(Screen.Earnings.route) },
+                onNavigateToPayments = { onNavigate(Screen.PaymentMethods.route) },
+                onNavigateToNotifications = { onNavigate(Screen.Notifications.route) },
+                onNavigateToAdmin = { onNavigate(Screen.AdminDashboard.route) },
+                onSignOut = onSignOut
             )
             Screen.ProfileEdit.route -> ProfileEditScreen(
                 workerId = workerId,
@@ -156,6 +189,9 @@ fun NavGraph(
                 workerId = workerId,
                 firestoreRepository = firestoreRepository,
                 onBack = { onNavigate(Screen.Settings.route) }
+            )
+            Screen.AdminDashboard.route -> AdminDashboardScreen(
+                onBack = { onNavigate(Screen.Profile.route) }
             )
         }
     }

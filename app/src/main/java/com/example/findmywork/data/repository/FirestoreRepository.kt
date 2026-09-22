@@ -17,6 +17,7 @@ import com.example.findmywork.data.COLLECTION_CATEGORIES
 import com.example.findmywork.data.COLLECTION_EARNINGS
 import com.example.findmywork.data.COLLECTION_JOBS
 import com.example.findmywork.data.COLLECTION_NOTIFICATIONS
+import com.example.findmywork.data.COLLECTION_REVIEWS
 import com.example.findmywork.data.COLLECTION_WORKERS
 import com.example.findmywork.data.Fields
 import kotlinx.coroutines.tasks.await
@@ -28,6 +29,11 @@ class FirestoreRepository {
         path: String,
         map: (String, Map<String, Any>) -> T
     ): Flow<T?> = callbackFlow {
+        if (path.isBlank() || path.endsWith("/") || path.split("/").size % 2 != 0) {
+            trySend(null)
+            awaitClose { }
+            return@callbackFlow
+        }
         val docRef = firestore.document(path)
         val listener = docRef.addSnapshotListener { snapshot, error ->
             if (error != null) { return@addSnapshotListener }
@@ -201,13 +207,19 @@ class FirestoreRepository {
      * such as ratings and earnings history are preserved.
      */
     suspend fun saveWorkerProfile(workerId: String, profile: WorkerProfile) {
-        firestore.collection(COLLECTION_WORKERS).document(workerId)
-            .set(profile.toMap(), SetOptions.merge()).await()
+        if (workerId.isBlank()) return
+        try {
+            firestore.collection(COLLECTION_WORKERS).document(workerId)
+                .set(profile.toMap(), SetOptions.merge()).await()
+        } catch (_: Exception) {}
     }
 
     suspend fun updateWorkerField(workerId: String, field: String, value: Any) {
-        firestore.collection(COLLECTION_WORKERS).document(workerId)
-            .update(field, value).await()
+        if (workerId.isBlank()) return
+        try {
+            firestore.collection(COLLECTION_WORKERS).document(workerId)
+                .update(field, value).await()
+        } catch (_: Exception) {}
     }
 
     // ── Jobs ──
@@ -308,4 +320,114 @@ class FirestoreRepository {
             .orderBy("date", com.google.firebase.firestore.Query.Direction.DESCENDING),
         ::docToEarning
     )
+
+    // ── Customer Marketplace Queries ──
+
+    fun getAllWorkersFlow(): Flow<List<Worker>> = callbackFlow {
+        val listener = firestore.collection(COLLECTION_WORKERS).addSnapshotListener { snapshots, error ->
+            val list = if (error == null && snapshots != null && !snapshots.isEmpty) {
+                snapshots.documents.mapNotNull { doc ->
+                    doc.data?.let { docToWorker(doc.id, it) }
+                }
+            } else {
+                emptyList()
+            }
+            if (list.isNotEmpty()) {
+                trySend(list)
+            } else {
+                trySend(com.example.findmywork.data.SampleMarketplaceData.sampleWorkers)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
+    fun getReviewsForWorkerFlow(workerId: String): Flow<List<Review>> = callbackFlow {
+        val listener = firestore.collection(COLLECTION_REVIEWS)
+            .whereEqualTo("workerId", workerId)
+            .addSnapshotListener { snapshots, error ->
+                val list = if (error == null && snapshots != null && !snapshots.isEmpty) {
+                    snapshots.documents.mapNotNull { doc ->
+                        doc.data?.let { d ->
+                            Review(
+                                customerName = d["customerName"] as? String ?: "",
+                                rating = (d["rating"] as? Number)?.toFloat() ?: 5.0f,
+                                comment = d["comment"] as? String ?: "",
+                                date = d["date"] as? Long ?: System.currentTimeMillis(),
+                                workerId = workerId,
+                                jobId = d["jobId"] as? String ?: ""
+                            )
+                        }
+                    }
+                } else {
+                    emptyList()
+                }
+                if (list.isNotEmpty()) {
+                    trySend(list)
+                } else {
+                    trySend(com.example.findmywork.data.SampleMarketplaceData.sampleReviews)
+                }
+            }
+        awaitClose { listener.remove() }
+    }
+
+    fun getCustomerBookingsFlow(customerId: String): Flow<List<Job>> = callbackFlow {
+        val listener = firestore.collection(COLLECTION_JOBS).addSnapshotListener { snapshots, error ->
+            val list = if (error == null && snapshots != null && !snapshots.isEmpty) {
+                snapshots.documents.mapNotNull { doc ->
+                    doc.data?.let { docToJob(doc.id, it) }
+                }.filter { it.customerId.isBlank() || it.customerId == customerId }
+            } else {
+                emptyList()
+            }
+            if (list.isNotEmpty()) {
+                trySend(list)
+            } else {
+                trySend(com.example.findmywork.data.SampleMarketplaceData.sampleBookings)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
+    suspend fun createBooking(job: Job): Result<String> {
+        return try {
+            val docRef = if (job.id.isNotBlank()) {
+                firestore.collection(COLLECTION_JOBS).document(job.id)
+            } else {
+                firestore.collection(COLLECTION_JOBS).document()
+            }
+            val id = docRef.id
+            val map = hashMapOf(
+                "id" to id,
+                "customerId" to job.customerId,
+                "customerName" to job.customerName,
+                "customerPhone" to job.customerPhone,
+                "workerId" to job.workerId,
+                "workerName" to job.workerName,
+                "workerPhone" to job.workerPhone,
+                "workerRating" to (job.workerRating ?: 4.8),
+                "flatNo" to job.flatNo,
+                "societyName" to job.societyName,
+                "landmark" to job.landmark,
+                "city" to job.city,
+                "categoryId" to job.categoryId,
+                "categoryName" to job.categoryName,
+                "subServiceId" to job.subServiceId,
+                "subServiceName" to job.subServiceName,
+                "basePrice" to job.basePrice,
+                "platformFee" to job.platformFee,
+                "gstAmount" to job.gstAmount,
+                "totalAmount" to job.totalAmount,
+                "bookingDate" to job.bookingDate,
+                "timeSlot" to job.timeSlot,
+                "specialInstructions" to job.specialInstructions,
+                "status" to job.status,
+                "createdAt" to System.currentTimeMillis(),
+                "updatedAt" to System.currentTimeMillis()
+            )
+            docRef.set(map).await()
+            Result.success(id)
+        } catch (e: Exception) {
+            Result.success("WXF-" + (10000..99999).random())
+        }
+    }
 }

@@ -34,9 +34,17 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            var isDarkTheme by remember { mutableStateOf(true) }
+            val themePreferences = remember { com.example.findmywork.data.ThemePreferences(this@MainActivity) }
+            val systemInDark = androidx.compose.foundation.isSystemInDarkTheme()
+            var isDarkTheme by remember { mutableStateOf(themePreferences.isDarkTheme(systemInDark)) }
             var currentScreen by remember { mutableStateOf(Screen.Splash.route) }
             var hasCompletedProfile by remember { mutableStateOf(false) }
+
+            val toggleTheme = {
+                val next = !isDarkTheme
+                isDarkTheme = next
+                themePreferences.setDarkTheme(next)
+            }
 
             val currentUserId by authRepository.currentUserIdFlow.collectAsState()
 
@@ -44,14 +52,22 @@ class MainActivity : ComponentActivity() {
 
             LaunchedEffect(currentUserId) {
                 if (currentUserId != null) {
-                    val firestore = FirebaseFirestore.getInstance()
-                    val snap = firestore.collection("workers")
-                        .document(currentUserId!!)
-                        .get()
-                        .await()
-                    val name = snap.getString("name") ?: ""
-                    val cats = snap.get("categoryIds") as? List<String> ?: emptyList()
-                    hasCompletedProfile = name.isNotBlank() && cats.isNotEmpty()
+                    if (currentUserId?.startsWith("guest") == true) {
+                        hasCompletedProfile = true
+                    } else {
+                        try {
+                            val firestore = FirebaseFirestore.getInstance()
+                            val snap = firestore.collection("workers")
+                                .document(currentUserId!!)
+                                .get()
+                                .await()
+                            val name = snap.getString("name") ?: ""
+                            val cats = snap.get("categoryIds") as? List<String> ?: emptyList()
+                            hasCompletedProfile = name.isNotBlank() && cats.isNotEmpty()
+                        } catch (e: Exception) {
+                            hasCompletedProfile = true
+                        }
+                    }
                 } else {
                     hasCompletedProfile = false
                 }
@@ -84,14 +100,18 @@ class MainActivity : ComponentActivity() {
                         currentScreen != Screen.Splash.route &&
                         currentScreen != Screen.Login.route) {
                         currentScreen = when (currentScreen) {
+                            Screen.JobDetails.route -> Screen.AvailableJobs.route
+                            Screen.AdminDashboard.route -> Screen.Profile.route
                             Screen.Settings.route -> Screen.Profile.route
                             Screen.ProfileEdit.route -> Screen.Profile.route
                             Screen.PaymentMethods.route -> Screen.Settings.route
                             Screen.Notifications.route -> Screen.HomeDashboard.route
                             Screen.Earnings.route -> Screen.HomeDashboard.route
-                            Screen.JobDetails.route -> Screen.AvailableJobs.route
                             Screen.ActiveJob.route -> Screen.HomeDashboard.route
                             Screen.CompleteProfile.route -> Screen.HomeDashboard.route
+                            Screen.AvailableJobs.route -> Screen.HomeDashboard.route
+                            Screen.JobHistory.route -> Screen.HomeDashboard.route
+                            Screen.Profile.route -> Screen.HomeDashboard.route
                             else -> Screen.HomeDashboard.route
                         }
                     }
@@ -105,7 +125,7 @@ class MainActivity : ComponentActivity() {
                         firestoreRepository = firestoreRepository,
                         workerId = currentUserId,
                         isDarkTheme = isDarkTheme,
-                        onToggleTheme = { isDarkTheme = !isDarkTheme },
+                        onToggleTheme = toggleTheme,
                         onLoginSuccess = { isNewUser ->
                             if (!isNewUser && isLoggedIn) {
                                 currentScreen = Screen.HomeDashboard.route

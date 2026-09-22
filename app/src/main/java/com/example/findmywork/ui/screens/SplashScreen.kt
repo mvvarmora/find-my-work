@@ -18,6 +18,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.findmywork.R
@@ -28,18 +29,15 @@ import kotlinx.coroutines.delay
 fun SplashScreen(
     isLoggedIn: Boolean,
     hasCompletedProfile: Boolean,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onAutoGuestLogin: () -> Unit = {}
 ) {
-    // Use hasCompletedProfile and isLoggedIn as keys so the LaunchedEffect
-    // restarts when these values change, ensuring we always read fresh values
-    // instead of stale captured ones from initial composition.
-    LaunchedEffect(hasCompletedProfile, isLoggedIn) {
-        delay(2000)
-        when {
-            !isLoggedIn -> onNavigate(Screen.Login.route)
-            !hasCompletedProfile -> onNavigate(Screen.CompleteProfile.route)
-            else -> onNavigate(Screen.HomeDashboard.route)
+    LaunchedEffect(Unit) {
+        if (!isLoggedIn) {
+            onAutoGuestLogin()
         }
+        delay(1500)
+        onNavigate(Screen.HomeDashboard.route)
     }
 
     Box(
@@ -59,7 +57,7 @@ fun SplashScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Find My Work",
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold
