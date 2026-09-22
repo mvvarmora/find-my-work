@@ -163,6 +163,37 @@ fun LoginScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            androidx.compose.material3.OutlinedButton(
+                onClick = {
+                    if (!isLoading) {
+                        isLoading = true
+                        scope.launch {
+                            val result = authRepository.signInDemo()
+                            isLoading = false
+                            result.fold(
+                                onSuccess = { isNewUser -> onLoginSuccess(isNewUser) },
+                                onFailure = { error ->
+                                    errorMessage = error.message ?: "Demo sign in failed"
+                                }
+                            )
+                        }
+                    }
+                },
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    "⚡ Explore Demo App Preview",
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(

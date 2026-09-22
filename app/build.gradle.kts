@@ -10,7 +10,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.findmywork"
+        applicationId = "com.example.findmywork.partner"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

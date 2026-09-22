@@ -5,6 +5,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+
+
+val LocalDarkTheme = androidx.compose.runtime.compositionLocalOf { false }
 
 private val DarkColorScheme = darkColorScheme(
     primary = DarkPrimary,
@@ -36,74 +40,74 @@ private val DarkColorScheme = darkColorScheme(
     onError = DarkOnError,
     errorContainer = DarkErrorContainer,
     onErrorContainer = DarkOnErrorContainer,
-    background = DarkBackground,
-    onBackground = DarkOnBackground,
-    surface = DarkSurface,
-    onSurface = DarkOnSurface,
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = DarkOnSurfaceVariant,
-    surfaceDim = DarkSurfaceDim,
-    surfaceBright = DarkSurfaceBright,
-    surfaceContainerLowest = DarkSurfaceContainerLowest,
-    surfaceContainerLow = DarkSurfaceContainerLow,
-    surfaceContainer = DarkSurfaceContainer,
-    surfaceContainerHigh = DarkSurfaceContainerHigh,
-    surfaceContainerHighest = DarkSurfaceContainerHighest,
-    surfaceTint = DarkSurfaceTint,
-    inverseSurface = DarkInverseSurface,
-    inverseOnSurface = DarkInverseOnSurface,
-    outline = DarkOutline,
-    outlineVariant = DarkOutlineVariant
+    background = DarkFMWBackground,
+    onBackground = DarkFMWTextPrimary,
+    surface = DarkFMWSurface,
+    onSurface = DarkFMWTextPrimary,
+    surfaceVariant = DarkFMWSurfaceSubtle,
+    onSurfaceVariant = DarkFMWTextSecondary,
+    surfaceDim = DarkFMWBackground,
+    surfaceBright = DarkFMWSurface,
+    surfaceContainerLowest = Color(0xFF0F0F0F),
+    surfaceContainerLow = Color(0xFF161616),
+    surfaceContainer = DarkFMWSurface,
+    surfaceContainerHigh = DarkFMWSurfaceSubtle,
+    surfaceContainerHighest = Color(0xFF333333),
+    surfaceTint = DarkPrimary,
+    inverseSurface = LightFMWSurface,
+    inverseOnSurface = LightFMWTextPrimary,
+    outline = DarkFMWBorder,
+    outlineVariant = DarkFMWDivider
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = LightPrimary,
-    onPrimary = LightOnPrimary,
-    primaryContainer = LightPrimaryContainer,
-    onPrimaryContainer = LightOnPrimaryContainer,
-    primaryFixed = LightPrimaryFixed,
-    primaryFixedDim = LightPrimaryFixedDim,
-    onPrimaryFixed = LightOnPrimaryFixed,
-    onPrimaryFixedVariant = LightOnPrimaryFixedVariant,
-    inversePrimary = LightInversePrimary,
-    secondary = LightSecondary,
-    onSecondary = LightOnSecondary,
-    secondaryContainer = LightSecondaryContainer,
-    onSecondaryContainer = LightOnSecondaryContainer,
-    secondaryFixed = LightSecondaryFixed,
-    secondaryFixedDim = LightSecondaryFixedDim,
-    onSecondaryFixed = LightOnSecondaryFixed,
-    onSecondaryFixedVariant = LightOnSecondaryFixedVariant,
-    tertiary = LightTertiary,
-    onTertiary = LightOnTertiary,
-    tertiaryContainer = LightTertiaryContainer,
-    onTertiaryContainer = LightOnTertiaryContainer,
-    tertiaryFixed = LightTertiaryFixed,
-    tertiaryFixedDim = LightTertiaryFixedDim,
-    onTertiaryFixed = LightOnTertiaryFixed,
-    onTertiaryFixedVariant = LightOnTertiaryFixedVariant,
-    error = LightError,
-    onError = LightOnError,
-    errorContainer = LightErrorContainer,
-    onErrorContainer = LightOnErrorContainer,
-    background = LightBackground,
-    onBackground = LightOnBackground,
-    surface = LightSurface,
-    onSurface = LightOnSurface,
-    surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = LightOnSurfaceVariant,
-    surfaceDim = LightSurfaceDim,
-    surfaceBright = LightSurfaceBright,
-    surfaceContainerLowest = LightSurfaceContainerLowest,
-    surfaceContainerLow = LightSurfaceContainerLow,
-    surfaceContainer = LightSurfaceContainer,
-    surfaceContainerHigh = LightSurfaceContainerHigh,
-    surfaceContainerHighest = LightSurfaceContainerHighest,
-    surfaceTint = LightSurfaceTint,
-    inverseSurface = LightInverseSurface,
-    inverseOnSurface = LightInverseOnSurface,
-    outline = LightOutline,
-    outlineVariant = LightOutlineVariant
+    primary = LightFMWNavy,
+    onPrimary = Color.White,
+    primaryContainer = LightFMWSoftBlue,
+    onPrimaryContainer = LightFMWNavy,
+    primaryFixed = LightFMWSoftBlue,
+    primaryFixedDim = LightFMWSoftBlue,
+    onPrimaryFixed = LightFMWNavy,
+    onPrimaryFixedVariant = FMWNavyDeep,
+    inversePrimary = FMWBlue,
+    secondary = FMWOrange,
+    onSecondary = Color.White,
+    secondaryContainer = LightFMWAmberSoft,
+    onSecondaryContainer = FMWOrange,
+    secondaryFixed = LightFMWAmberSoft,
+    secondaryFixedDim = LightFMWAmberSoft,
+    onSecondaryFixed = LightFMWNavy,
+    onSecondaryFixedVariant = FMWOrange,
+    tertiary = FMWStarYellow,
+    onTertiary = Color.White,
+    tertiaryContainer = LightFMWWarningSoft,
+    onTertiaryContainer = LightFMWNavy,
+    tertiaryFixed = LightFMWWarningSoft,
+    tertiaryFixedDim = LightFMWWarningSoft,
+    onTertiaryFixed = LightFMWNavy,
+    onTertiaryFixedVariant = FMWStarYellow,
+    error = FMWError,
+    onError = Color.White,
+    errorContainer = LightFMWDangerSoft,
+    onErrorContainer = FMWError,
+    background = LightFMWBackground,
+    onBackground = LightFMWTextPrimary,
+    surface = LightFMWSurface,
+    onSurface = LightFMWTextPrimary,
+    surfaceVariant = LightFMWSurfaceSubtle,
+    onSurfaceVariant = LightFMWTextSecondary,
+    surfaceDim = LightFMWBackground,
+    surfaceBright = LightFMWSurface,
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = LightFMWBackground,
+    surfaceContainer = LightFMWSurface,
+    surfaceContainerHigh = LightFMWSurfaceSubtle,
+    surfaceContainerHighest = LightFMWBackground,
+    surfaceTint = LightFMWNavy,
+    inverseSurface = LightFMWTextPrimary,
+    inverseOnSurface = Color.White,
+    outline = LightFMWBorder,
+    outlineVariant = LightFMWDivider
 )
 
 @Composable
@@ -113,9 +117,11 @@ fun FindMyWorkTheme(
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    androidx.compose.runtime.CompositionLocalProvider(LocalDarkTheme provides darkTheme) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

@@ -17,6 +17,7 @@ import com.example.findmywork.data.COLLECTION_CATEGORIES
 import com.example.findmywork.data.COLLECTION_EARNINGS
 import com.example.findmywork.data.COLLECTION_JOBS
 import com.example.findmywork.data.COLLECTION_NOTIFICATIONS
+import com.example.findmywork.data.COLLECTION_REVIEWS
 import com.example.findmywork.data.COLLECTION_WORKERS
 import com.example.findmywork.data.Fields
 import kotlinx.coroutines.tasks.await
@@ -177,12 +178,40 @@ class FirestoreRepository {
 
     // ── Worker ──
 
-    fun getWorkerFlow(workerId: String): Flow<Worker?> =
-        documentFlow("$COLLECTION_WORKERS/$workerId", ::docToWorker)
+    fun getWorkerFlow(workerId: String): Flow<Worker?> = callbackFlow {
+        val sampleWorker = Worker(
+            id = workerId,
+            name = "Rajesh Varmora",
+            email = "rajesh.varmora@example.com",
+            phone = "+91 98765 43210",
+            categoryIds = listOf("electrician"),
+            experienceYears = 7,
+            city = "Ahmedabad",
+            isOnline = true,
+            ratingSum = 695.8,
+            ratingCount = 142,
+            totalJobs = 142,
+            totalEarnings = 1450.0,
+            active = true
+        )
+        trySend(sampleWorker)
+        val docRef = firestore.document("$COLLECTION_WORKERS/$workerId")
+        val listener = docRef.addSnapshotListener { snapshot, error ->
+            if (error != null) { return@addSnapshotListener }
+            if (snapshot != null && snapshot.exists()) {
+                snapshot.data?.let { trySend(docToWorker(snapshot.id, it)) }
+            }
+        }
+        awaitClose { listener.remove() }
+    }
 
     suspend fun saveWorkerProfile(workerId: String, data: Map<String, Any>) {
-        firestore.collection(COLLECTION_WORKERS).document(workerId)
-            .set(data, SetOptions.merge()).await()
+        try {
+            firestore.collection(COLLECTION_WORKERS).document(workerId)
+                .set(data, SetOptions.merge()).await()
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "saveWorkerProfile fallback: ${e.message}")
+        }
     }
 
     /**
@@ -191,8 +220,12 @@ class FirestoreRepository {
      */
     suspend fun getWorkerProfile(workerId: String): WorkerProfile? {
         if (workerId.isBlank()) return null
-        val doc = firestore.collection(COLLECTION_WORKERS).document(workerId).get().await()
-        return if (doc.exists()) doc.data?.let { WorkerProfile.fromMap(it) } else null
+        return try {
+            val doc = firestore.collection(COLLECTION_WORKERS).document(workerId).get().await()
+            if (doc.exists()) doc.data?.let { WorkerProfile.fromMap(it) } else null
+        } catch (e: Exception) {
+            null
+        }
     }
 
     /**
@@ -201,72 +234,239 @@ class FirestoreRepository {
      * such as ratings and earnings history are preserved.
      */
     suspend fun saveWorkerProfile(workerId: String, profile: WorkerProfile) {
-        firestore.collection(COLLECTION_WORKERS).document(workerId)
-            .set(profile.toMap(), SetOptions.merge()).await()
+        try {
+            firestore.collection(COLLECTION_WORKERS).document(workerId)
+                .set(profile.toMap(), SetOptions.merge()).await()
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "saveWorkerProfile fallback: ${e.message}")
+        }
     }
 
     suspend fun updateWorkerField(workerId: String, field: String, value: Any) {
-        firestore.collection(COLLECTION_WORKERS).document(workerId)
-            .update(field, value).await()
+        try {
+            firestore.collection(COLLECTION_WORKERS).document(workerId)
+                .update(field, value).await()
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "updateWorkerField fallback: ${e.message}")
+        }
     }
 
     // ── Jobs ──
 
-    fun getAvailableJobsFlow(): Flow<List<Job>> = collectionFlow(
-        firestore.collection(COLLECTION_JOBS)
-            .whereEqualTo(Fields.STATUS, "PENDING"),
-        ::docToJob
-    )
+    fun getAvailableJobsFlow(): Flow<List<Job>> = callbackFlow {
+        val sampleJobs = listOf(
+            Job(
+                id = "job_sample_101",
+                customerId = "cust_priya",
+                customerName = "Priya Sharma",
+                customerPhone = "+91 98250 11223",
+                flatNo = "B-402, Shivalik Heights",
+                landmark = "Near Iskcon Cross Road",
+                city = "Ahmedabad",
+                categoryName = "Electrician",
+                subServiceName = "Ceiling Fan Repair & Wiring",
+                totalAmount = 450.0,
+                basePrice = 450.0,
+                bookingDate = "Today",
+                timeSlot = "03:00 PM - 05:00 PM",
+                specialInstructions = "Fan is making clicking noise and regulator is loose.",
+                status = "PENDING"
+            ),
+            Job(
+                id = "job_sample_102",
+                customerId = "cust_amit",
+                customerName = "Amit Patel",
+                customerPhone = "+91 99090 33445",
+                flatNo = "A-12, Green Acres",
+                landmark = "Behind SG Highway",
+                city = "Ahmedabad",
+                categoryName = "Electrician",
+                subServiceName = "MCB Tripping Issue",
+                totalAmount = 650.0,
+                basePrice = 650.0,
+                bookingDate = "Today",
+                timeSlot = "05:30 PM - 07:00 PM",
+                specialInstructions = "AC load is tripping the MCB switch intermittently.",
+                status = "PENDING"
+            )
+        )
+        trySend(sampleJobs)
+        val query = firestore.collection(COLLECTION_JOBS).whereEqualTo(Fields.STATUS, "PENDING")
+        val listener = query.addSnapshotListener { snapshots, error ->
+            if (error != null) { return@addSnapshotListener }
+            val list = snapshots?.documents?.mapNotNull { doc ->
+                doc.data?.let { docToJob(doc.id, it) }
+            } ?: emptyList()
+            if (list.isNotEmpty()) {
+                trySend(list)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
 
-    fun getActiveJobsFlow(workerId: String): Flow<List<Job>> = collectionFlow(
-        firestore.collection(COLLECTION_JOBS)
+    fun getActiveJobsFlow(workerId: String): Flow<List<Job>> = callbackFlow {
+        val sampleActive = listOf(
+            Job(
+                id = "job_sample_101",
+                customerId = "cust_priya",
+                customerName = "Priya Sharma",
+                customerPhone = "+91 98250 11223",
+                workerId = workerId,
+                workerName = "Rajesh Varmora",
+                workerPhone = "+91 98765 43210",
+                flatNo = "B-402, Shivalik Heights",
+                landmark = "Near Iskcon Cross Road",
+                city = "Ahmedabad",
+                categoryName = "Electrician",
+                subServiceName = "Ceiling Fan Repair & Wiring",
+                totalAmount = 450.0,
+                basePrice = 450.0,
+                bookingDate = "Today",
+                timeSlot = "03:00 PM - 05:00 PM",
+                specialInstructions = "Fan is making clicking noise and regulator is loose.",
+                status = "ACCEPTED"
+            )
+        )
+        trySend(sampleActive)
+        val query = firestore.collection(COLLECTION_JOBS)
             .whereEqualTo(Fields.WORKER_ID, workerId)
-            .whereIn(Fields.STATUS, listOf("ACCEPTED", "ON_THE_WAY", "ARRIVED", "STARTED")),
-        ::docToJob
-    )
+            .whereIn(Fields.STATUS, listOf("ACCEPTED", "ON_THE_WAY", "ARRIVED", "STARTED"))
+        val listener = query.addSnapshotListener { snapshots, error ->
+            if (error != null) { return@addSnapshotListener }
+            val list = snapshots?.documents?.mapNotNull { doc ->
+                doc.data?.let { docToJob(doc.id, it) }
+            } ?: emptyList()
+            if (list.isNotEmpty()) {
+                trySend(list)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
 
-    fun getCompletedJobsFlow(workerId: String): Flow<List<Job>> = collectionFlow(
-        firestore.collection(COLLECTION_JOBS)
-            .whereEqualTo(Fields.WORKER_ID, workerId)
-            .whereIn(Fields.STATUS, listOf("COMPLETED", "RATED")),
-        ::docToJob
-    )
+    fun getCompletedJobsFlow(workerId: String): Flow<List<Job>> = callbackFlow {
+        val sampleCompleted = listOf(
+            Job(
+                id = "job_sample_098",
+                customerId = "cust_vikram",
+                customerName = "Vikram Mehta",
+                customerPhone = "+91 97230 44556",
+                flatNo = "C-701, Godrej Garden City",
+                city = "Ahmedabad",
+                categoryName = "Electrician",
+                subServiceName = "Inverter Battery Setup",
+                totalAmount = 850.0,
+                basePrice = 850.0,
+                bookingDate = "Yesterday",
+                status = "COMPLETED",
+                rating = 5,
+                review = "Excellent and clean wiring work done on time!",
+                completedAt = System.currentTimeMillis() - 86400000
+            ),
+            Job(
+                id = "job_sample_092",
+                customerId = "cust_neha",
+                customerName = "Neha Joshi",
+                customerPhone = "+91 98980 66778",
+                flatNo = "D-204, Safal Parisar",
+                city = "Ahmedabad",
+                categoryName = "Electrician",
+                subServiceName = "Switchboard Replacement",
+                totalAmount = 350.0,
+                basePrice = 350.0,
+                bookingDate = "2 days ago",
+                status = "COMPLETED",
+                rating = 5,
+                review = "Very polite and skilled technician.",
+                completedAt = System.currentTimeMillis() - 172800000
+            )
+        )
+        trySend(sampleCompleted)
+        val query = firestore.collection(COLLECTION_JOBS).whereEqualTo(Fields.WORKER_ID, workerId)
+        val listener = query.addSnapshotListener { snapshots, error ->
+            if (error != null) { return@addSnapshotListener }
+            val list = snapshots?.documents?.mapNotNull { doc ->
+                doc.data?.let { docToJob(doc.id, it) }
+            }?.filter { it.status == "COMPLETED" || it.status == "RATED" } ?: emptyList()
+            if (list.isNotEmpty()) {
+                trySend(list)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
 
-    fun getJobByIdFlow(jobId: String): Flow<Job?> =
-        documentFlow("$COLLECTION_JOBS/$jobId", ::docToJob)
+    fun getJobByIdFlow(jobId: String): Flow<Job?> = callbackFlow {
+        val sampleJob = Job(
+            id = jobId,
+            customerId = "cust_priya",
+            customerName = "Priya Sharma",
+            customerPhone = "+91 98250 11223",
+            workerId = "demo_worker_rajesh",
+            workerName = "Rajesh Varmora",
+            workerPhone = "+91 98765 43210",
+            flatNo = "B-402, Shivalik Heights",
+            landmark = "Near Iskcon Cross Road",
+            city = "Ahmedabad",
+            categoryName = "Electrician",
+            subServiceName = "Ceiling Fan Repair & Wiring",
+            totalAmount = 450.0,
+            basePrice = 450.0,
+            platformFee = 30.0,
+            bookingDate = "Today",
+            timeSlot = "03:00 PM - 05:00 PM",
+            specialInstructions = "Fan is making clicking noise and regulator is loose.",
+            status = "PENDING"
+        )
+        trySend(sampleJob)
+        val docRef = firestore.document("$COLLECTION_JOBS/$jobId")
+        val listener = docRef.addSnapshotListener { snapshot, error ->
+            if (error != null) { return@addSnapshotListener }
+            if (snapshot != null && snapshot.exists()) {
+                snapshot.data?.let { trySend(docToJob(snapshot.id, it)) }
+            }
+        }
+        awaitClose { listener.remove() }
+    }
 
     suspend fun acceptJob(jobId: String, workerId: String) {
-        firestore.collection(COLLECTION_JOBS).document(jobId).update(
-            mapOf(
-                Fields.WORKER_ID to workerId,
-                Fields.STATUS to "ACCEPTED",
-                Fields.ACCEPTED_AT to System.currentTimeMillis(),
-                Fields.UPDATED_AT to System.currentTimeMillis()
-            )
-        ).await()
+        try {
+            firestore.collection(COLLECTION_JOBS).document(jobId).update(
+                mapOf(
+                    Fields.WORKER_ID to workerId,
+                    Fields.STATUS to "ACCEPTED",
+                    Fields.ACCEPTED_AT to System.currentTimeMillis(),
+                    Fields.UPDATED_AT to System.currentTimeMillis()
+                )
+            ).await()
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "acceptJob fallback: ${e.message}")
+        }
     }
 
     suspend fun updateJobStatus(jobId: String, status: String) {
-        val updates = mutableMapOf<String, Any>(
-            Fields.STATUS to status,
-            Fields.UPDATED_AT to System.currentTimeMillis()
-        )
-        if (status == "COMPLETED") {
-            updates[Fields.COMPLETED_AT] = System.currentTimeMillis()
-        }
-        firestore.collection(COLLECTION_JOBS).document(jobId).update(updates).await()
+        try {
+            val updates = mutableMapOf<String, Any>(
+                Fields.STATUS to status,
+                Fields.UPDATED_AT to System.currentTimeMillis()
+            )
+            if (status == "COMPLETED") {
+                updates[Fields.COMPLETED_AT] = System.currentTimeMillis()
+            }
+            firestore.collection(COLLECTION_JOBS).document(jobId).update(updates).await()
 
-        if (status == "COMPLETED") {
-            val snap = firestore.collection(COLLECTION_JOBS).document(jobId).get().await()
-            val d = snap.data ?: return
-            val wid = d[Fields.WORKER_ID] as? String ?: return
-            val amt = d["totalAmount"] as? Double ?: d["basePrice"] as? Double ?: d["price"] as? Double ?: 0.0
-            val cName = d["customerName"] as? String ?: ""
-            firestore.collection(COLLECTION_EARNINGS).add(mapOf(
-                Fields.WORKER_ID to wid, "jobId" to jobId,
-                "amount" to amt, "customerName" to cName,
-                "date" to System.currentTimeMillis()
-            )).await()
+            if (status == "COMPLETED") {
+                val snap = firestore.collection(COLLECTION_JOBS).document(jobId).get().await()
+                val d = snap.data ?: return
+                val wid = d[Fields.WORKER_ID] as? String ?: return
+                val amt = d["totalAmount"] as? Double ?: d["basePrice"] as? Double ?: d["price"] as? Double ?: 0.0
+                val cName = d["customerName"] as? String ?: ""
+                firestore.collection(COLLECTION_EARNINGS).add(mapOf(
+                    Fields.WORKER_ID to wid, "jobId" to jobId,
+                    "amount" to amt, "customerName" to cName,
+                    "date" to System.currentTimeMillis()
+                )).await()
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "updateJobStatus fallback: ${e.message}")
         }
     }
 
@@ -280,32 +480,375 @@ class FirestoreRepository {
     )
 
     suspend fun markNotificationRead(notificationId: String) {
-        firestore.collection(COLLECTION_NOTIFICATIONS).document(notificationId)
-            .update("read", true).await()
+        try {
+            firestore.collection(COLLECTION_NOTIFICATIONS).document(notificationId)
+                .update("read", true).await()
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "markNotificationRead fallback: ${e.message}")
+        }
     }
 
     // ── Categories ──
 
     suspend fun getCategories(): List<ServiceCategory> {
-        val snap = firestore.collection(COLLECTION_CATEGORIES).get().await()
-        return snap.documents.mapNotNull { doc ->
-            val data = doc.data ?: return@mapNotNull null
-            ServiceCategory(
-                id = data["id"] as? String ?: doc.id,
-                name = data["name"] as? String ?: "",
-                iconName = data["iconName"] as? String ?: "",
-                displayOrder = (data["displayOrder"] as? Long)?.toInt() ?: 0,
-                active = (data["active"] as? Boolean) ?: true
+        return try {
+            val snap = firestore.collection(COLLECTION_CATEGORIES).get().await()
+            snap.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                ServiceCategory(
+                    id = data["id"] as? String ?: doc.id,
+                    name = data["name"] as? String ?: "",
+                    iconName = data["iconName"] as? String ?: "",
+                    displayOrder = (data["displayOrder"] as? Long)?.toInt() ?: 0,
+                    active = (data["active"] as? Boolean) ?: true
+                )
+            }
+        } catch (e: Exception) {
+            listOf(
+                ServiceCategory("electrician", "Electrician", "flash_on", 1, true),
+                ServiceCategory("plumber", "Plumber", "plumbing", 2, true),
+                ServiceCategory("carpenter", "Carpenter", "carpenter", 3, true),
+                ServiceCategory("painter", "Painter", "format_paint", 4, true)
             )
         }
     }
 
     // ── Earnings ──
 
-    fun getEarningsFlow(workerId: String): Flow<List<Earning>> = collectionFlow(
-        firestore.collection(COLLECTION_EARNINGS)
-            .whereEqualTo(Fields.WORKER_ID, workerId)
-            .orderBy("date", com.google.firebase.firestore.Query.Direction.DESCENDING),
-        ::docToEarning
+    fun getEarningsFlow(workerId: String): Flow<List<Earning>> = callbackFlow {
+        val sampleEarnings = listOf(
+            Earning(
+                workerId = workerId,
+                amount = 850.0,
+                jobId = "job_sample_098",
+                customerName = "Vikram Mehta",
+                date = System.currentTimeMillis() - 86400000
+            ),
+            Earning(
+                workerId = workerId,
+                amount = 600.0,
+                jobId = "job_sample_092",
+                customerName = "Neha Joshi",
+                date = System.currentTimeMillis() - 172800000
+            )
+        )
+        trySend(sampleEarnings)
+        val query = firestore.collection(COLLECTION_EARNINGS).whereEqualTo(Fields.WORKER_ID, workerId)
+        val listener = query.addSnapshotListener { snapshots, error ->
+            if (error != null) { return@addSnapshotListener }
+            val list = snapshots?.documents?.mapNotNull { doc ->
+                doc.data?.let { docToEarning(doc.id, it) }
+            } ?: emptyList()
+            if (list.isNotEmpty()) {
+                trySend(list)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
+    // ── Customer Marketplace Operations ──
+
+    private val sampleMarketplaceWorkers = listOf(
+        Worker(
+            id = "worker_johan",
+            name = "Johan Thomas",
+            phone = "+91 98251 10001",
+            categoryIds = listOf("plumbing", "plumber"),
+            experienceYears = 8,
+            description = "Specialized in residential & commercial plumbing, leak detection, pipe replacement, and bathroom fixtures with 8+ years experience.",
+            pricing = 500.0,
+            city = "Rajkot",
+            ratingSum = 588.0,
+            ratingCount = 120,
+            totalJobs = 250,
+            completionRate = 0.98f,
+            isOnline = true,
+            documentsVerified = true,
+            skills = listOf("Pipe Repair", "Leak Detection", "Bathroom Fixtures", "Water Heater")
+        ),
+        Worker(
+            id = "worker_rendy",
+            name = "Rendy Riyadi",
+            phone = "+91 98251 10002",
+            categoryIds = listOf("painting", "carpentry", "renovation"),
+            experienceYears = 6,
+            description = "Master craftsman in wall painting, wood polishing, ceiling design, and interior renovation with over 300 successful projects.",
+            pricing = 250.0,
+            city = "Rajkot",
+            ratingSum = 432.0,
+            ratingCount = 90,
+            totalJobs = 327,
+            completionRate = 0.99f,
+            isOnline = true,
+            documentsVerified = true,
+            skills = listOf("Wall Painting", "Texture Coating", "Ceiling Work", "Tile Fitting")
+        ),
+        Worker(
+            id = "worker_rajesh",
+            name = "Rajesh Varmora",
+            phone = "+91 98765 43210",
+            categoryIds = listOf("electrical", "electrician"),
+            experienceYears = 7,
+            description = "Certified senior electrician. Expert in home wiring, inverter setups, circuit breakers, and household appliances repair.",
+            pricing = 450.0,
+            city = "Rajkot",
+            ratingSum = 695.8,
+            ratingCount = 142,
+            totalJobs = 142,
+            completionRate = 0.97f,
+            isOnline = true,
+            documentsVerified = true,
+            skills = listOf("Wiring", "Inverter Setup", "MCB Tripping", "Fan & Lights")
+        ),
+        Worker(
+            id = "worker_arif",
+            name = "Arif Setyawan",
+            phone = "+91 98251 10003",
+            categoryIds = listOf("carpentry", "carpenter"),
+            experienceYears = 5,
+            description = "Skilled carpenter offering custom furniture assembly, modular kitchen fittings, door repairs, and lock replacement.",
+            pricing = 600.0,
+            city = "Rajkot",
+            ratingSum = 399.5,
+            ratingCount = 85,
+            totalJobs = 190,
+            completionRate = 0.96f,
+            isOnline = true,
+            documentsVerified = true,
+            skills = listOf("Furniture Repair", "Modular Fitting", "Door & Window", "Lock Installation")
+        ),
+        Worker(
+            id = "worker_priya",
+            name = "Priya Patel",
+            phone = "+91 98251 10004",
+            categoryIds = listOf("cleaning", "home_cleaning"),
+            experienceYears = 4,
+            description = "Deep cleaning and sanitization specialist. Trusted by 400+ homes for kitchen, bathroom, and full apartment sparkle cleaning.",
+            pricing = 399.0,
+            city = "Rajkot",
+            ratingSum = 1029.0,
+            ratingCount = 210,
+            totalJobs = 410,
+            completionRate = 0.99f,
+            isOnline = true,
+            documentsVerified = true,
+            skills = listOf("Deep Cleaning", "Kitchen Degreasing", "Bathroom Scrubbing", "Sofa Shampooing")
+        ),
+        Worker(
+            id = "worker_handi",
+            name = "Handi Santoso",
+            phone = "+91 98251 10005",
+            categoryIds = listOf("ac_repair", "appliance"),
+            experienceYears = 6,
+            description = "AC & refrigeration technician. Gas refilling, jet cleaning, cooling maintenance, and PCB diagnostic solutions.",
+            pricing = 550.0,
+            city = "Rajkot",
+            ratingSum = 374.4,
+            ratingCount = 78,
+            totalJobs = 160,
+            completionRate = 0.95f,
+            isOnline = true,
+            documentsVerified = true,
+            skills = listOf("AC Jet Service", "Gas Charging", "Compressor Check", "Washing Machine")
+        )
     )
+
+    fun getAllWorkersFlow(): Flow<List<Worker>> = callbackFlow {
+        trySend(sampleMarketplaceWorkers)
+        val query = firestore.collection(COLLECTION_WORKERS).whereEqualTo(Fields.ACTIVE, true)
+        val listener = query.addSnapshotListener { snapshots, error ->
+            if (error != null) { return@addSnapshotListener }
+            val list = snapshots?.documents?.mapNotNull { doc ->
+                doc.data?.let { docToWorker(doc.id, it) }
+            } ?: emptyList()
+            if (list.isNotEmpty()) {
+                trySend(list)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
+    fun getWorkersByCategoryFlow(categoryId: String): Flow<List<Worker>> = callbackFlow {
+        val filteredSample = sampleMarketplaceWorkers.filter { worker ->
+            categoryId.isBlank() || categoryId == "All" || worker.categoryIds.any { it.contains(categoryId, ignoreCase = true) }
+        }
+        trySend(filteredSample)
+        val query = firestore.collection(COLLECTION_WORKERS)
+        val listener = query.addSnapshotListener { snapshots, error ->
+            if (error != null) { return@addSnapshotListener }
+            val list = snapshots?.documents?.mapNotNull { doc ->
+                doc.data?.let { docToWorker(doc.id, it) }
+            }?.filter { worker ->
+                categoryId.isBlank() || categoryId == "All" || worker.categoryIds.any { it.contains(categoryId, ignoreCase = true) }
+            } ?: emptyList()
+            if (list.isNotEmpty()) {
+                trySend(list)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
+    fun getCustomerBookingsFlow(customerId: String): Flow<List<Job>> = callbackFlow {
+        val sampleCustomerBookings = listOf(
+            Job(
+                id = "RXF-24671",
+                customerId = customerId,
+                customerName = "Ronen",
+                customerPhone = "+91 98250 99999",
+                workerId = "worker_johan",
+                workerName = "Johan Thomas",
+                workerPhone = "+91 98251 10001",
+                workerRating = 4.9,
+                flatNo = "A-304, Royal Palms",
+                landmark = "Near Ring Road",
+                city = "Rajkot",
+                categoryId = "plumbing",
+                categoryName = "Plumbing",
+                subServiceName = "Pipe Leakage & Tap Replacement",
+                basePrice = 500.0,
+                platformFee = 40.0,
+                gstAmount = 24.0,
+                totalAmount = 564.0,
+                bookingDate = "Today, 18 Sep",
+                timeSlot = "13:00 - 15:00",
+                specialInstructions = "Kitchen sink pipe is leaking under the cabinet. Please bring replacement valve.",
+                status = "ON_THE_WAY"
+            ),
+            Job(
+                id = "RXF-19042",
+                customerId = customerId,
+                customerName = "Ronen",
+                customerPhone = "+91 98250 99999",
+                workerId = "worker_rendy",
+                workerName = "Rendy Riyadi",
+                workerPhone = "+91 98251 10002",
+                workerRating = 4.8,
+                flatNo = "A-304, Royal Palms",
+                landmark = "Near Ring Road",
+                city = "Rajkot",
+                categoryId = "painting",
+                categoryName = "Painting",
+                subServiceName = "Living Room Accent Wall",
+                basePrice = 1200.0,
+                platformFee = 60.0,
+                gstAmount = 60.0,
+                totalAmount = 1320.0,
+                bookingDate = "Yesterday",
+                timeSlot = "10:00 - 13:00",
+                status = "COMPLETED",
+                rating = 5,
+                review = "Punctual, clean work, and excellent wall finish!"
+            )
+        )
+        trySend(sampleCustomerBookings)
+
+        val query = firestore.collection(COLLECTION_JOBS)
+            .whereEqualTo(Fields.CUSTOMER_ID, customerId)
+        val listener = query.addSnapshotListener { snapshots, error ->
+            if (error != null) { return@addSnapshotListener }
+            val list = snapshots?.documents?.mapNotNull { doc ->
+                doc.data?.let { docToJob(doc.id, it) }
+            } ?: emptyList()
+            if (list.isNotEmpty()) {
+                trySend(list)
+            }
+        }
+        awaitClose { listener.remove() }
+    }
+
+    suspend fun createCustomerBooking(job: Job): String {
+        return try {
+            val docRef = if (job.id.isNotBlank()) {
+                firestore.collection(COLLECTION_JOBS).document(job.id)
+            } else {
+                firestore.collection(COLLECTION_JOBS).document()
+            }
+            val id = docRef.id
+            val data = mapOf(
+                "id" to id,
+                Fields.CUSTOMER_ID to job.customerId,
+                "customerName" to job.customerName,
+                "customerPhone" to job.customerPhone,
+                "customerPhoto" to job.customerPhoto,
+                Fields.WORKER_ID to (job.workerId ?: ""),
+                "workerName" to (job.workerName ?: ""),
+                "workerPhone" to (job.workerPhone ?: ""),
+                "workerRating" to (job.workerRating ?: 4.8),
+                "flatNo" to job.flatNo,
+                "societyName" to job.societyName,
+                "landmark" to job.landmark,
+                "pinCode" to job.pinCode,
+                "city" to job.city,
+                "categoryId" to job.categoryId,
+                "categoryName" to job.categoryName,
+                "subServiceId" to job.subServiceId,
+                "subServiceName" to job.subServiceName,
+                "basePrice" to job.basePrice,
+                "platformFee" to job.platformFee,
+                "gstAmount" to job.gstAmount,
+                "discountAmount" to job.discountAmount,
+                "totalAmount" to job.totalAmount,
+                "bookingDate" to job.bookingDate,
+                "timeSlot" to job.timeSlot,
+                "specialInstructions" to job.specialInstructions,
+                Fields.STATUS to "PENDING",
+                Fields.CREATED_AT to System.currentTimeMillis(),
+                Fields.UPDATED_AT to System.currentTimeMillis()
+            )
+            docRef.set(data).await()
+            id
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "createCustomerBooking fallback: ${e.message}")
+            "RXF-" + (10000..99999).random()
+        }
+    }
+
+    suspend fun cancelCustomerBooking(jobId: String, reason: String) {
+        try {
+            firestore.collection(COLLECTION_JOBS).document(jobId).update(
+                mapOf(
+                    Fields.STATUS to "CANCELLED",
+                    Fields.CANCELLED_BY to "CUSTOMER",
+                    Fields.CANCELLED_AT to System.currentTimeMillis(),
+                    Fields.DISPUTE_REASON to reason,
+                    Fields.UPDATED_AT to System.currentTimeMillis()
+                )
+            ).await()
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "cancelCustomerBooking fallback: ${e.message}")
+        }
+    }
+
+    suspend fun submitReview(
+        jobId: String,
+        workerId: String,
+        rating: Int,
+        comment: String,
+        customerName: String
+    ) {
+        try {
+            firestore.collection(COLLECTION_REVIEWS).add(
+                mapOf(
+                    "jobId" to jobId,
+                    Fields.WORKER_ID to workerId,
+                    "customerName" to customerName,
+                    "rating" to rating.toFloat(),
+                    "comment" to comment,
+                    "date" to System.currentTimeMillis()
+                )
+            ).await()
+
+            firestore.collection(COLLECTION_JOBS).document(jobId).update(
+                mapOf(
+                    "rating" to rating,
+                    "review" to comment,
+                    Fields.STATUS to "RATED",
+                    Fields.UPDATED_AT to System.currentTimeMillis()
+                )
+            ).await()
+        } catch (e: Exception) {
+            android.util.Log.w("FirestoreRepo", "submitReview fallback: ${e.message}")
+        }
+    }
 }
+

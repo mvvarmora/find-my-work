@@ -27,9 +27,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.findmywork.ui.theme.FMWBorder
 import com.example.findmywork.ui.theme.FMWDanger
+import com.example.findmywork.ui.theme.FMWMutedText
 import com.example.findmywork.ui.theme.FMWNavy
 import com.example.findmywork.ui.theme.FMWSuccess
 import com.example.findmywork.ui.theme.FMWTextPrimary
+import com.example.findmywork.ui.theme.FMWTextSecondary
 import com.example.findmywork.ui.theme.labelCaption
 
 /**
@@ -102,6 +104,11 @@ fun FMWEditField(
             unfocusedBorderColor = if (hasError) FMWDanger else FMWBorder,
             errorBorderColor = FMWDanger,
             focusedTextColor = FMWTextPrimary,
+            unfocusedTextColor = FMWTextPrimary,
+            focusedLabelColor = FMWNavy,
+            unfocusedLabelColor = FMWTextSecondary,
+            focusedPlaceholderColor = FMWMutedText,
+            unfocusedPlaceholderColor = FMWMutedText,
             cursorColor = FMWNavy
         )
     )
@@ -140,6 +147,12 @@ fun FMWDropdownField(
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = FMWNavy,
                 unfocusedBorderColor = FMWBorder,
+                focusedTextColor = FMWTextPrimary,
+                unfocusedTextColor = FMWTextPrimary,
+                focusedLabelColor = FMWNavy,
+                unfocusedLabelColor = FMWTextSecondary,
+                focusedPlaceholderColor = FMWMutedText,
+                unfocusedPlaceholderColor = FMWMutedText,
                 cursorColor = FMWNavy
             ),
             modifier = Modifier

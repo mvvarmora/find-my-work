@@ -13,12 +13,14 @@ fun ProfileScreen(
     workerId: String?,
     firestoreRepository: FirestoreRepository,
     onNavigateToSettings: () -> Unit,
-    onEditProfile: () -> Unit
+    onEditProfile: () -> Unit,
+    onSwitchToCustomer: () -> Unit = {}
 ) {
     ProfileViewScreen(
         workerId = workerId,
         firestoreRepository = firestoreRepository,
         onNavigateToSettings = onNavigateToSettings,
-        onEditProfile = onEditProfile
+        onEditProfile = onEditProfile,
+        onSwitchToCustomer = onSwitchToCustomer
     )
 }

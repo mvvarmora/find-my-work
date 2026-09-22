@@ -34,36 +34,58 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            var isDarkTheme by remember { mutableStateOf(true) }
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val prefs = remember { context.getSharedPreferences("app_settings", android.content.Context.MODE_PRIVATE) }
+            val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            var isDarkTheme by remember {
+                mutableStateOf(prefs.getBoolean("is_dark_theme", systemDark))
+            }
+            val toggleTheme: () -> Unit = {
+                val newMode = !isDarkTheme
+                isDarkTheme = newMode
+                prefs.edit().putBoolean("is_dark_theme", newMode).apply()
+            }
             var currentScreen by remember { mutableStateOf(Screen.Splash.route) }
             var hasCompletedProfile by remember { mutableStateOf(false) }
 
             val currentUserId by authRepository.currentUserIdFlow.collectAsState()
-
             val isLoggedIn = currentUserId != null
 
             LaunchedEffect(currentUserId) {
                 if (currentUserId != null) {
-                    val firestore = FirebaseFirestore.getInstance()
-                    val snap = firestore.collection("workers")
-                        .document(currentUserId!!)
-                        .get()
-                        .await()
-                    val name = snap.getString("name") ?: ""
-                    val cats = snap.get("categoryIds") as? List<String> ?: emptyList()
-                    hasCompletedProfile = name.isNotBlank() && cats.isNotEmpty()
+                    try {
+                        val firestore = FirebaseFirestore.getInstance()
+                        val snap = firestore.collection("workers")
+                            .document(currentUserId!!)
+                            .get()
+                            .await()
+                        val name = snap.getString("name") ?: ""
+                        val cats = snap.get("categoryIds") as? List<String> ?: emptyList()
+                        hasCompletedProfile = name.isNotBlank() && cats.isNotEmpty()
+                    } catch (_: Exception) {
+                        hasCompletedProfile = true
+                    }
                 } else {
                     hasCompletedProfile = false
                 }
             }
 
-            val bottomNavRoutes = listOf(
+            val customerNavRoutes = listOf(
+                Screen.CustomerHome.route,
+                Screen.Categories.route,
+                Screen.CustomerBookings.route,
+                Screen.CustomerProfile.route
+            )
+
+            val providerNavRoutes = listOf(
                 Screen.HomeDashboard.route,
                 Screen.AvailableJobs.route,
                 Screen.JobHistory.route,
                 Screen.Profile.route
             )
-            val showBottomBar = currentScreen in bottomNavRoutes
+
+            val showBottomBar = currentScreen in customerNavRoutes || currentScreen in providerNavRoutes
+            val isProviderMode = currentScreen in providerNavRoutes
 
             val scope = rememberCoroutineScope()
 
@@ -74,25 +96,37 @@ class MainActivity : ComponentActivity() {
                         if (showBottomBar) {
                             BottomNavBar(
                                 currentRoute = currentScreen,
+                                isProviderMode = isProviderMode,
                                 onNavigate = { route -> currentScreen = route }
                             )
                         }
                     }
                 ) { innerPadding ->
-                    // Handle system back button
-                    BackHandler(enabled = currentScreen != Screen.HomeDashboard.route &&
-                        currentScreen != Screen.Splash.route &&
-                        currentScreen != Screen.Login.route) {
+                    // Intelligent back handling
+                    BackHandler(
+                        enabled = currentScreen != Screen.CustomerHome.route &&
+                                currentScreen != Screen.HomeDashboard.route &&
+                                currentScreen != Screen.Splash.route &&
+                                currentScreen != Screen.Login.route
+                    ) {
                         currentScreen = when (currentScreen) {
-                            Screen.Settings.route -> Screen.Profile.route
-                            Screen.ProfileEdit.route -> Screen.Profile.route
-                            Screen.PaymentMethods.route -> Screen.Settings.route
-                            Screen.Notifications.route -> Screen.HomeDashboard.route
+                            Screen.CategoryWorkers.route -> Screen.Categories.route
+                            Screen.Categories.route -> Screen.CustomerHome.route
+                            Screen.WorkerDetail.route -> Screen.CustomerHome.route
+                            Screen.BookingFlow.route -> Screen.WorkerDetail.route
+                            Screen.CustomerBookingDetail.route -> Screen.CustomerBookings.route
+                            Screen.CustomerBookings.route -> Screen.CustomerHome.route
+                            Screen.AdminDashboard.route -> Screen.CustomerProfile.route
+                            Screen.HelpSupport.route -> Screen.CustomerProfile.route
+                            Screen.Settings.route -> Screen.CustomerProfile.route
+                            Screen.ProfileEdit.route -> Screen.CustomerProfile.route
+                            Screen.PaymentMethods.route -> Screen.CustomerProfile.route
+                            Screen.Notifications.route -> Screen.CustomerHome.route
                             Screen.Earnings.route -> Screen.HomeDashboard.route
                             Screen.JobDetails.route -> Screen.AvailableJobs.route
                             Screen.ActiveJob.route -> Screen.HomeDashboard.route
-                            Screen.CompleteProfile.route -> Screen.HomeDashboard.route
-                            else -> Screen.HomeDashboard.route
+                            Screen.CompleteProfile.route -> Screen.CustomerHome.route
+                            else -> Screen.CustomerHome.route
                         }
                     }
 
@@ -105,11 +139,9 @@ class MainActivity : ComponentActivity() {
                         firestoreRepository = firestoreRepository,
                         workerId = currentUserId,
                         isDarkTheme = isDarkTheme,
-                        onToggleTheme = { isDarkTheme = !isDarkTheme },
+                        onToggleTheme = toggleTheme,
                         onLoginSuccess = { isNewUser ->
-                            if (!isNewUser && isLoggedIn) {
-                                currentScreen = Screen.HomeDashboard.route
-                            }
+                            currentScreen = if (isNewUser) Screen.CompleteProfile.route else Screen.CustomerHome.route
                         },
                         onProfileComplete = { hasCompletedProfile = true },
                         onSignOut = {

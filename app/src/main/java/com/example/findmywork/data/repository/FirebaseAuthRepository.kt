@@ -110,8 +110,63 @@ class FirebaseAuthRepository {
         }
     }
 
+    suspend fun signInDemo(): Result<Boolean> {
+        return try {
+            val authResult = auth.signInAnonymously().await()
+            val user = authResult.user
+            val isNew = authResult.additionalUserInfo?.isNewUser ?: false
+            if (user != null) {
+                val doc = firestore.collection(COLLECTION_WORKERS).document(user.uid).get().await()
+                if (!doc.exists()) {
+                    val now = System.currentTimeMillis()
+                    val workerData = hashMapOf(
+                        "id" to user.uid,
+                        "name" to "Rajesh Varmora",
+                        "email" to "rajesh.varmora@example.com",
+                        "phone" to "+91 98765 43210",
+                        "photo" to "",
+                        "age" to 32,
+                        "gender" to "Male",
+                        "categoryIds" to listOf("electrician"),
+                        "experienceYears" to 7,
+                        "description" to "Master Electrician & Appliance Specialist",
+                        "pricing" to 299.0,
+                        "serviceRadius" to 15.0,
+                        "workingRadiusKm" to 15,
+                        "isOnline" to true,
+                        "ratingSum" to 48.0,
+                        "ratingCount" to 10,
+                        "totalJobs" to 142,
+                        "completionRate" to 98.4f,
+                        "totalEarnings" to 184500.0,
+                        "documentsVerified" to true,
+                        "bankAccount" to "918273645012",
+                        "upiId" to "rajesh@oksbi",
+                        "city" to "Ahmedabad",
+                        "skills" to listOf("Wiring", "Inverter", "MCB", "Fan Repair"),
+                        "status" to "APPROVED",
+                        "worksBeforeAfter" to listOf("MORNING", "EVENING"),
+                        "createdAt" to now,
+                        "updatedAt" to now,
+                        "active" to true,
+                        "rejectionReason" to null
+                    )
+                    firestore.collection(COLLECTION_WORKERS).document(user.uid)
+                        .set(workerData)
+                        .await()
+                }
+            }
+            Result.success(false)
+        } catch (e: Exception) {
+            _currentUserId.value = "demo_worker_rajesh"
+            Result.success(false)
+        }
+    }
+
     suspend fun logout() {
-        auth.signOut()
+        try {
+            auth.signOut()
+        } catch (_: Exception) {}
         _currentUserId.value = null
     }
 
